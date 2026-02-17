@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # ===== CATALOGUE SERVICE =====
+  catalogue-db:
+    image: mysql:5.7
+    hostname: catalogue-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+      MYSQL_DATABASE: socksdb
+    volumes:
+      - ./catalogue/docker/catalogue-db/data/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  catalogue:
+    build:
+      context: ./catalogue
+      dockerfile: Dockerfile.local
+    hostname: catalogue
+    restart: unless-stopped
+    command: ["-port=80", "-images=/images/", "-DSN=catalogue_user:default_password@tcp(catalogue-db:3306)/socksdb"]
+    depends_on:
+      catalogue-db:
+        condition: service_healthy
+    ports:
+      - "8081:80"
+
+  # ===== CARTS SERVICE =====
+  carts-db:
+    image: mongo:4.4
+    hostname: carts-db
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+
+  carts:
+    build:
+      context: ./carts
+      dockerfile: Dockerfile
+    hostname: carts
+    restart: unless-stopped
+    environment:
+      - db=carts-db
+    depends_on:
+      - carts-db
+    ports:
+      - "8082:80"
+
+  # ===== FRONT-END =====
+  front-end:
+    build:
+      context: ./front-end
+      dockerfile: Dockerfile
+    hostname: front-end
+    restart: unless-stopped
+    depends_on:
+      - catalogue
+      - carts
+    ports:
+      - "8079:8079"

@@ -1,0 +1,69 @@
+{
+  "name": "mogambo-front-end",
+  "version": "0.0.1",
+  "description": "Front end for mogambo  application.",
+  "main": "server.js",
+  "config": {
+    "service": "FRONTEND",
+    "service_short": "frontend",
+    "reporter": "jslint",
+    "distribution": "./distribution",
+    "build": "./distribution/build"
+  },
+  "scripts": {
+    "test": "nyc mocha test/*_test.js test/api/*_test.js --exit",
+    "coverage": "nyc --reporter=cobertura --reporter=text mocha test/*_test.js test/api/*_test.js --reporter mocha-junit-reporter --reporter-options mochaFile=./results/test-results.xml",
+    "start": "node server.js",
+    "clean:build": "rimraf $npm_package_config_distribution",
+    "create:build": "mkdirp $npm_package_config_build",
+    "clean": "npm run clean:build && npm run create:build && rimraf npm-debug.log",
+    "precopy": "echo Copying $npm_package_config_service v\"$npm_package_version\" codebase to build folder",
+    "copy": "cp -R -L  ./node_modules ./public ./*.json ./helpers ./api ./test ./scripts ./*.js  $npm_package_config_build",
+    "build": "npm run clean",
+    "prepackage": "echo Packaging $npm_package_config_service v\"$npm_package_version\" service",
+    "package": " npm run build && npm run copy",
+    "postpackage": "cd $npm_package_config_build && zip -r ../$npm_package_config_service_short-\"$npm_package_version\".zip . && cd ../.. && rimraf $npm_package_config_build",
+    "predist": "echo Preparing to package $npm_package_config_service v\"$npm_package_version\" service",
+    "dist": "npm run build && npm run package",
+    "postdist": "echo Successfully packaged $npm_package_config_service v\"$npm_package_version\" service"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/udbc/front-end"
+  },
+  "contributors": [
+    "Ian Crosby <ian.daniel.crosby@gmail.com>",
+    "Carlos León <mail@carlosleon.info> (carlosleon.info)",
+    "Gourav SHah <gouravshah@initcron.org>"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "async": "^3.2.5",
+    "axios": "^1.7.7",
+    "body-parser": "^1.20.3",
+    "connect-redis": "^7.1.1",
+    "cookie-parser": "^1.4.6",
+    "express": "^4.21.1",
+    "express-session": "^1.18.1",
+    "finalhandler": "^1.2.0",
+    "morgan": "^1.10.0",
+    "prom-client": "^15.1.0",
+    "redis": "^4.7.1",
+    "serve-static": "^1.16.2"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^9.0.0",
+    "chai": "^4.4.1",
+    "chai-http": "^4.4.0",
+    "copyfiles": "^2.4.1",
+    "expect.js": "^0.3.1",
+    "mkdirp": "^3.0.1",
+    "mocha": "^10.7.0",
+    "mocha-junit-reporter": "^2.2.1",
+    "mongodb": "^6.10.0",
+    "nyc": "^17.1.0",
+    "rimraf": "^6.0.1",
+    "should": "^13.2.3",
+    "sinon": "^18.0.0"
+  }
+}

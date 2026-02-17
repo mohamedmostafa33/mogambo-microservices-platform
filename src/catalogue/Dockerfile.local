@@ -1,0 +1,14 @@
+FROM alpine:3.18
+
+RUN apk add --no-cache ca-certificates
+
+WORKDIR /app
+COPY bin/catalogue /app/catalogue
+COPY images/ /images/
+
+RUN chmod +x /app/catalogue
+
+EXPOSE 80
+
+ENTRYPOINT ["/app/catalogue"]
+CMD ["-port=80", "-images=/images/"]

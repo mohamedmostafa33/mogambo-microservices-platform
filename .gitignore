@@ -1,0 +1,64 @@
+# ========================
+# Mogambo Microservices Platform
+# ========================
+
+# ----- OS / Editor -----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.iml
+
+# ----- Node.js (front-end) -----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.nyc_output/
+coverage/
+
+# ----- Java (carts) -----
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+.mvn/
+!.mvn/wrapper/
+
+# ----- Go (catalogue) -----
+*.exe
+*.test
+*.out
+
+# ----- Docker -----
+docker-compose.override.yml
+
+# ----- Terraform -----
+infra/terraform/**/.terraform/
+infra/terraform/**/*.tfstate
+infra/terraform/**/*.tfstate.backup
+infra/terraform/**/*.tfplan
+infra/terraform/**/.terraform.lock.hcl
+
+# ----- Helm -----
+deploy/helm/charts/**/charts/
+*.tgz
+
+# ----- Secrets / Env -----
+.env
+.env.*
+*.pem
+*.key
+secrets/
+**/secrets.yaml
+**/secrets.yml
+
+# ----- Misc -----
+tmp/
+temp/
+*.bak

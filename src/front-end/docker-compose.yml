@@ -1,0 +1,8 @@
+version: "3.9"
+
+services:
+  frontend:
+    build: .
+    image: mohamedadel9988/frontend:v1
+    ports:
+      - "8079:8079"

@@ -1,0 +1,9 @@
+# Ignore npm installed packages
+/node_modules
+
+# Ignore coverage reports
+/coverage
+
+.idea
+# Ignore nyc coverage output
+.nyc_output/

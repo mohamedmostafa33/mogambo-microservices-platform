@@ -1,0 +1,11 @@
+{
+  "check-coverage": false,
+  "reporter": ["text", "html"],
+  "exclude": [
+    "test/**",
+    "coverage/**",
+    "node_modules/**"
+  ],
+  "exit": true
+}
+
