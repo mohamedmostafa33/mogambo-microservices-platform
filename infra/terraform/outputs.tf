@@ -80,3 +80,63 @@ output "private_route_table_id" {
   description = "The ID of the private route table"
   value       = module.vpc.private_route_table_id
 }
+
+output "alb_sg_id" {
+  description = "Security Group ID for the Application Load Balancer"
+  value       = module.sg.alb_sg_id
+}
+
+output "eks_node_group_sg_id" {
+  description = "Security Group ID for the EKS Node Group"
+  value       = module.sg.eks_node_group_sg_id
+}
+
+output "catalogue_db_sg_id" {
+  description = "Security Group ID for the Catalogue Database (RDS)"
+  value       = module.sg.catalogue_db_sg_id
+}
+
+output "carts_db_sg_id" {
+  description = "Security Group ID for the Carts Database (DocumentDB)"
+  value       = module.sg.carts_db_sg_id
+}
+
+output "db_instance_id" {
+  description = "RDS instance ID"
+  value       = module.rds.db_instance_id
+}
+
+output "db_instance_arn" {
+  description = "RDS instance ARN"
+  value       = module.rds.db_instance_arn
+}
+
+output "db_endpoint" {
+  description = "RDS endpoint (hostname)"
+  value       = module.rds.db_endpoint
+}
+
+output "db_address" {
+  description = "RDS address"
+  value       = module.rds.db_address
+}
+
+output "db_port" {
+  description = "RDS port"
+  value       = module.rds.db_port
+}
+
+output "db_name" {
+  description = "Database name"
+  value       = module.rds.db_name
+}
+
+output "db_subnet_group_name" {
+  description = "DB subnet group name"
+  value       = module.rds.db_subnet_group_name
+}
+
+output "db_security_group_ids" {
+  description = "Security group IDs attached to RDS"
+  value       = module.rds.db_security_group_ids
+}

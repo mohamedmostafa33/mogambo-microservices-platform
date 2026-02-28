@@ -1,20 +1,22 @@
-data "aws_availability_zones" "available" { state = "available" }
+data "aws_availability_zones" "available" {
+  state = "available"
+}
 
 resource "aws_vpc" "mogambo_vpc" {
-  cidr_block = var.vpc_cidr_block
+  cidr_block           = var.vpc_cidr_block
   enable_dns_hostnames = true
-  enable_dns_support = true
+  enable_dns_support   = true
 
   tags = {
     Name = "mogambo-vpc"
-  } 
+  }
 }
 
 resource "aws_subnet" "mogambo_public_subnet_1" {
-  vpc_id     = aws_vpc.mogambo_vpc.id
-  cidr_block = var.public_subnet_cidr_block_1
+  vpc_id                  = aws_vpc.mogambo_vpc.id
+  cidr_block              = var.public_subnet_cidr_block_1
   map_public_ip_on_launch = true
-  availability_zone = data.aws_availability_zones.available.names[0]
+  availability_zone       = data.aws_availability_zones.available.names[0]
 
   tags = {
     Name = "mogambo-public-subnet_1"
@@ -22,10 +24,10 @@ resource "aws_subnet" "mogambo_public_subnet_1" {
 }
 
 resource "aws_subnet" "mogambo_public_subnet_2" {
-  vpc_id     = aws_vpc.mogambo_vpc.id
-  cidr_block = var.public_subnet_cidr_block_2
+  vpc_id                  = aws_vpc.mogambo_vpc.id
+  cidr_block              = var.public_subnet_cidr_block_2
   map_public_ip_on_launch = true
-  availability_zone = data.aws_availability_zones.available.names[1]
+  availability_zone       = data.aws_availability_zones.available.names[1]
 
   tags = {
     Name = "mogambo-public-subnet_2"
@@ -33,10 +35,10 @@ resource "aws_subnet" "mogambo_public_subnet_2" {
 }
 
 resource "aws_subnet" "mogambo_private_subnet_1" {
-  vpc_id     = aws_vpc.mogambo_vpc.id
-  cidr_block = var.private_subnet_cidr_block_1
+  vpc_id                  = aws_vpc.mogambo_vpc.id
+  cidr_block              = var.private_subnet_cidr_block_1
   map_public_ip_on_launch = false
-  availability_zone = data.aws_availability_zones.available.names[0]
+  availability_zone       = data.aws_availability_zones.available.names[0]
 
   tags = {
     Name = "mogambo-private-subnet_1"
@@ -44,10 +46,10 @@ resource "aws_subnet" "mogambo_private_subnet_1" {
 }
 
 resource "aws_subnet" "mogambo_private_subnet_2" {
-  vpc_id     = aws_vpc.mogambo_vpc.id
-  cidr_block = var.private_subnet_cidr_block_2
+  vpc_id                  = aws_vpc.mogambo_vpc.id
+  cidr_block              = var.private_subnet_cidr_block_2
   map_public_ip_on_launch = false
-  availability_zone = data.aws_availability_zones.available.names[1]
+  availability_zone       = data.aws_availability_zones.available.names[1]
 
   tags = {
     Name = "mogambo-private-subnet_2"
