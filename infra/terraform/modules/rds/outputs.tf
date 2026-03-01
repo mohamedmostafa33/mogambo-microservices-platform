@@ -23,6 +23,11 @@ output "db_port" {
   value       = aws_db_instance.mogambo_catalogue_db.port
 }
 
+output "db_identifier" {
+  description = "RDS instance identifier"
+  value       = aws_db_instance.mogambo_catalogue_db.identifier
+}
+
 output "db_name" {
   description = "Database name"
   value       = aws_db_instance.mogambo_catalogue_db.db_name

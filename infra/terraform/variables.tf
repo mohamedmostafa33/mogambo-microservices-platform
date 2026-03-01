@@ -64,6 +64,12 @@ variable "db_max_allocated_storage" {
   default     = 100
 }
 
+variable "db_identifier" {
+  description = "The identifier for the RDS instance"
+  type        = string
+  default = "mogambo-catalogue-db-instance"
+}
+
 variable "db_name" {
   description = "The name of the database to create when the DB instance is created"
   type        = string

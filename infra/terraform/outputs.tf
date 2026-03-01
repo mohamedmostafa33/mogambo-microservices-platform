@@ -126,6 +126,11 @@ output "db_port" {
   value       = module.rds.db_port
 }
 
+output "db_identifier" {
+  description = "RDS instance identifier"
+  value       = module.rds.db_identifier
+}
+
 output "db_name" {
   description = "Database name"
   value       = module.rds.db_name

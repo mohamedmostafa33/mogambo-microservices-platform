@@ -4,12 +4,13 @@ resource "aws_db_subnet_group" "mogambo_catalogue_db_subnet_group" {
   subnet_ids  = var.db_subnet_ids
 }
 
-resource "aws_db_instance" "mogambo_catalogue_db" {
+resource "aws_db_instance" "mogambo_catalogue_db" { 
   engine                 = var.db_engine
   engine_version         = var.db_engine_version
   instance_class         = var.db_instance_class
   allocated_storage      = var.db_allocated_storage
   max_allocated_storage  = var.db_max_allocated_storage
+  identifier             = var.db_identifier
   db_name                = var.db_name
   username               = var.db_username
   password               = var.db_password
