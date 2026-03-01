@@ -27,3 +27,16 @@ module "rds" {
   db_password              = var.db_password
   db_security_group_ids    = [module.sg.catalogue_db_sg_id]
 }
+
+module "documentdb" {
+  source                  = "./modules/documentdb"
+  docdb_subnet_group_name = var.docdb_subnet_group_name
+  docdb_subnet_ids        = module.vpc.private_subnet_ids
+  docdb_identifier        = var.docdb_identifier
+  docdb_engine            = var.docdb_engine
+  docdb_engine_version    = var.docdb_engine_version
+  docdb_username          = var.docdb_username
+  docdb_password          = var.docdb_password
+  docdb_security_group_id = module.sg.carts_db_sg_id
+  docdb_instance_class    = var.docdb_instance_class
+}

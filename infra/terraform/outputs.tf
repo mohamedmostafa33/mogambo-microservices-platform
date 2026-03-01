@@ -145,3 +145,32 @@ output "db_security_group_ids" {
   description = "Security group IDs attached to RDS"
   value       = module.rds.db_security_group_ids
 }
+
+output "docdb_cluster_endpoint" {
+  description = "The writer endpoint of the DocumentDB cluster"
+  value       = module.documentdb.docdb_cluster_endpoint
+}
+
+output "docdb_cluster_reader_endpoint" {
+  description = "The reader endpoint of the DocumentDB cluster"
+  value       = module.documentdb.docdb_cluster_reader_endpoint
+}
+
+output "docdb_cluster_id" {
+  description = "The ID of the DocumentDB cluster"
+  value       = module.documentdb.docdb_cluster_id
+}
+
+output "docdb_instance_ids" {
+  description = "List of all DocumentDB cluster instance IDs"
+  value       = [
+    module.documentdb.docdb_instance_ids[0]
+  ]
+}
+
+output "docdb_instance_endpoints" {
+  description = "List of endpoints for each DocumentDB instance"
+  value = [
+    module.documentdb.docdb_instance_endpoints[0]
+  ]
+}

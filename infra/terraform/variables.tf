@@ -88,3 +88,46 @@ variable "db_password" {
   sensitive   = true
   default     = "Mogambo#2026!"
 }
+
+variable "docdb_subnet_group_name" {
+  description = "The name of the subnet group for the DocumentDB cluster"
+  type        = string
+  default     = "mogambo-docdb-subnet-group"
+}
+
+variable "docdb_identifier" {
+  description = "The DocumentDB cluster identifier"
+  type        = string
+  default     = "mogambo-carts-docdb-cluster"
+}
+
+variable "docdb_engine" {
+  description = "The DocumentDB engine"
+  type        = string
+  default     = "docdb"
+}
+
+variable "docdb_engine_version" {
+  description = "The DocumentDB engine version"
+  type        = string
+  default     = "5.0.0"
+}
+
+variable "docdb_username" {
+  description = "The DocumentDB master username"
+  type        = string
+  default     = "mogambo_user"
+}
+
+variable "docdb_password" {
+  description = "The DocumentDB master password"
+  type        = string
+  sensitive   = true
+  default     = "Mogambo#2026!"
+}
+
+variable "docdb_instance_class" {
+  description = "The instance class for the DocumentDB cluster"
+  type        = string
+  default     = "db.t3.medium"
+}
