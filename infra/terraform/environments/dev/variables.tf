@@ -124,3 +124,57 @@ variable "cloudfront_price_class" {
   type        = string
   default     = "PriceClass_100"
 }
+
+variable "eks_role_name" {
+  description = "The name of the IAM role for the EKS cluster"
+  type        = string
+  default = "mogambo-eks-cluster-role"
+}
+
+variable "eks_node_group_role_name" {
+  description = "The name of the IAM role for the EKS node group"
+  type        = string
+  default     = "mogambo-eks-node-group-role"
+}
+
+variable "cluster_name" {
+  description = "The name of the EKS cluster"
+  type        = string
+  default     = "mogambo-eks-cluster"
+}
+
+variable "kubernetes_version" {
+  description = "The Kubernetes version for the EKS cluster"
+  type        = string
+  default     = "1.35"
+}
+
+variable "eks_node_group_name" {
+  description = "The name of the EKS node group"
+  type        = string
+  default     = "mogambo-eks-node-group"
+}
+
+variable "eks_node_group_instance_type" {
+  description = "The instance type for the EKS node group"
+  type        = list(string)
+  default     = ["t3.medium"]
+}
+
+variable "desired_node_count" {
+  description = "The desired number of nodes in the EKS node group"
+  type        = number
+  default     = 5
+}
+
+variable "max_node_count" {
+  description = "The maximum number of nodes in the EKS node group" 
+  type        = number
+  default     = 6
+}
+
+variable "min_node_count" {
+  description = "The minimum number of nodes in the EKS node group"
+  type        = number
+  default     = 5
+}
