@@ -34,3 +34,10 @@ module "ecr" {
   catalogue_repository_name  = var.catalogue_repository_name
   cart_repository_name       = var.cart_repository_name
 }
+
+module "s3" {
+  source                 = "../../modules/s3"
+  bucket_name            = var.bucket_name
+  environment            = var.environment
+  cloudfront_price_class = var.cloudfront_price_class
+}

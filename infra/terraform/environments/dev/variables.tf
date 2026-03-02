@@ -106,3 +106,21 @@ variable "cart_repository_name" {
   type        = string
   default     = "mogambo-cart"
 }
+
+variable "bucket_name" {
+  description = "The name of the S3 bucket to create"
+  type        = string
+  default     = "mogambo-platform-bucket"
+}
+
+variable "environment" {
+  description = "Environment name (dev, staging, prod)"
+  type        = string
+  default     = "dev"
+}
+
+variable "cloudfront_price_class" {
+  description = "CloudFront distribution price class"
+  type        = string
+  default     = "PriceClass_100"
+}

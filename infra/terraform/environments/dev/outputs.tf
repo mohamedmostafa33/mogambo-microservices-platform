@@ -185,3 +185,38 @@ output "cart_repository_arn" {
   description = "ARN of the cart ECR repository"
   value       = module.ecr.cart_repository_arn
 }
+
+output "mogambo_s3_bucket_name" {
+  description = "Name of the Mogambo S3 bucket"
+  value       = module.s3.mogambo_s3_bucket_name
+}
+
+output "mogambo_s3_bucket_arn" {
+  description = "ARN of the Mogambo S3 bucket"
+  value       = module.s3.mogambo_s3_bucket_arn
+}
+
+output "mogambo_s3_bucket_regional_domain_name" {
+  description = "Regional domain name of the S3 bucket"
+  value       = module.s3.mogambo_s3_bucket_regional_domain_name
+}
+
+output "mogambo_s3_bucket_region" {
+  description = "Region where the S3 bucket is created"
+  value       = module.s3.mogambo_s3_bucket_region
+}
+
+output "cloudfront_domain_name" {
+  description = "CloudFront domain name for accessing static and media assets"
+  value       = module.s3.cloudfront_domain_name
+}
+
+output "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID"
+  value       = module.s3.cloudfront_distribution_id
+}
+
+output "cloudfront_distribution_arn" {
+  description = "CloudFront distribution ARN"
+  value       = module.s3.cloudfront_distribution_arn
+}
