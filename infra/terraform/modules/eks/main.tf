@@ -22,7 +22,7 @@ resource "aws_eks_node_group" "mogambo_eks_node_group" {
 
   subnet_ids      = var.eks_subnet_ids
 
-  instance_types  = var.eks_node_group_instance_type
+  instance_types  = [var.eks_node_group_instance_type]
 
   scaling_config {
     desired_size = var.desired_node_count

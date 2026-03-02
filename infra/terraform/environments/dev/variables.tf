@@ -157,8 +157,8 @@ variable "eks_node_group_name" {
 
 variable "eks_node_group_instance_type" {
   description = "The instance type for the EKS node group"
-  type        = list(string)
-  default     = ["t3.medium"]
+  type        = string
+  default     = "t3.medium"
 }
 
 variable "desired_node_count" {

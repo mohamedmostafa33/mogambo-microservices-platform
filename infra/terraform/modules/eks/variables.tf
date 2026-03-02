@@ -30,7 +30,7 @@ variable "eks_node_group_role_arn" {
 
 variable "eks_node_group_instance_type" {
   description = "The instance type for the EKS node group"
-  type        = list(string)
+  type        = string
 }
 
 variable "desired_node_count" {
