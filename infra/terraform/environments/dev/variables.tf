@@ -158,7 +158,7 @@ variable "eks_node_group_name" {
 variable "eks_node_group_instance_type" {
   description = "The instance type for the EKS node group"
   type        = string
-  default     = "t3.medium"
+  default     = "t3.small"
 }
 
 variable "desired_node_count" {
