@@ -34,3 +34,30 @@ module "ecr" {
   catalogue_repository_name  = var.catalogue_repository_name
   cart_repository_name       = var.cart_repository_name
 }
+
+module "s3" {
+  source                 = "../../modules/s3"
+  bucket_name            = var.bucket_name
+  environment            = var.environment
+  cloudfront_price_class = var.cloudfront_price_class
+}
+
+module "iam" {
+  source                   = "../../modules/iam"
+  eks_role_name            = var.eks_role_name
+  eks_node_group_role_name = var.eks_node_group_role_name
+}
+
+module "eks" {
+  source                       = "../../modules/eks"
+  cluster_name                 = var.cluster_name
+  kubernetes_version           = var.kubernetes_version
+  eks_role_arn                 = module.iam.eks_cluster_role_arn
+  eks_subnet_ids               = module.vpc.private_subnet_ids
+  eks_node_group_name          = var.eks_node_group_name
+  eks_node_group_role_arn      = module.iam.eks_node_group_role_arn
+  eks_node_group_instance_type = var.eks_node_group_instance_type
+  desired_node_count           = var.desired_node_count
+  max_node_count               = var.max_node_count
+  min_node_count               = var.min_node_count
+}
