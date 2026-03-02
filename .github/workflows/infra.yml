@@ -43,20 +43,20 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform Initialize
-        working-directory: ./infra/terraform
+        working-directory: ./infra/terraform/environments/dev
         run: |
           echo "Initializing Terraform backend and providers..."
           terraform init
       
       - name: Terraform Validation
-        working-directory: ./infra/terraform
+        working-directory: ./infra/terraform/environments/dev
         run: |
           echo "Validating Terraform configuration..."
           terraform validate
 
       - name: Terraform Plan
         if: ${{ github.event.inputs.action == 'plan' }}
-        working-directory: ./infra/terraform
+        working-directory: ./infra/terraform/environments/dev
         run: |
           echo "Generating Terraform execution plan..."
           terraform plan -out=tfplan
@@ -64,7 +64,7 @@ jobs:
 
       - name: Terraform Apply
         if: ${{ github.event.inputs.action == 'apply' }}
-        working-directory: ./infra/terraform
+        working-directory: ./infra/terraform/environments/dev
         run: |
           echo "Applying Terraform configuration..."
           terraform apply -auto-approve -input=false
@@ -72,7 +72,7 @@ jobs:
         
       - name: Terraform Destroy
         if: ${{ github.event.inputs.action == 'destroy' }}
-        working-directory: ./infra/terraform
+        working-directory: ./infra/terraform/environments/dev
         run: |
           echo "Destroying Terraform-managed infrastructure..."
           terraform destroy -auto-approve
@@ -80,7 +80,7 @@ jobs:
       
       - name: Terraform Outputs
         if: ${{ github.event.inputs.action == 'outputs' }}
-        working-directory: ./infra/terraform
+        working-directory: ./infra/terraform/environments/dev
         run: |
           echo "Retrieving Terraform outputs..."
           terraform output -json > terraform_outputs.json
