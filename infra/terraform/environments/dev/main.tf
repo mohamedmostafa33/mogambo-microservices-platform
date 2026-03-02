@@ -1,5 +1,5 @@
 module "vpc" {
-  source                      = "./modules/vpc"
+  source                      = "../../modules/vpc"
   vpc_cidr_block              = var.vpc_cidr_block
   public_subnet_cidr_block_1  = var.public_subnet_cidr_block_1
   public_subnet_cidr_block_2  = var.public_subnet_cidr_block_2
@@ -8,12 +8,12 @@ module "vpc" {
 }
 
 module "sg" {
-  source = "./modules/sg"
+  source = "../../modules/sg"
   vpc_id = module.vpc.vpc_id
 }
 
 module "rds" {
-  source                   = "./modules/rds"
+  source                   = "../../modules/rds"
   db_subnet_group_name     = var.db_subnet_group_name
   db_subnet_ids            = module.vpc.private_subnet_ids
   db_engine                = var.db_engine
@@ -29,7 +29,7 @@ module "rds" {
 }
 
 module "documentdb" {
-  source                  = "./modules/documentdb"
+  source                  = "../../modules/documentdb"
   docdb_subnet_group_name = var.docdb_subnet_group_name
   docdb_subnet_ids        = module.vpc.private_subnet_ids
   docdb_identifier        = var.docdb_identifier
@@ -39,4 +39,11 @@ module "documentdb" {
   docdb_password          = var.docdb_password
   docdb_security_group_id = module.sg.carts_db_sg_id
   docdb_instance_class    = var.docdb_instance_class
+}
+
+module "ecr" {
+  source = "../../modules/ecr"
+  frontend_repository_name   = var.frontend_repository_name
+  catalogue_repository_name  = var.catalogue_repository_name
+  cart_repository_name       = var.cart_repository_name
 }

@@ -131,3 +131,21 @@ variable "docdb_instance_class" {
   type        = string
   default     = "db.t3.medium"
 }
+
+variable "frontend_repository_name" {
+  description = "The name of the frontend ECR repository"
+  type        = string
+  default     = "mogambo-frontend"
+}
+
+variable "catalogue_repository_name" {
+  description = "The name of the catalogue ECR repository"
+  type        = string
+  default     = "mogambo-catalogue"
+}
+
+variable "cart_repository_name" {
+  description = "The name of the cart ECR repository"
+  type        = string
+  default     = "mogambo-cart"
+}
