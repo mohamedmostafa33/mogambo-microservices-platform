@@ -220,3 +220,58 @@ output "cloudfront_distribution_arn" {
   description = "CloudFront distribution ARN"
   value       = module.s3.cloudfront_distribution_arn
 }
+
+output "eks_cluster_role_name" {
+  description = "The name of the IAM role for the EKS cluster"
+  value       = module.iam.eks_cluster_role_name
+}
+
+output "eks_cluster_role_arn" {
+  description = "The ARN of the IAM role for the EKS cluster"
+  value       = module.iam.eks_cluster_role_arn
+}
+
+output "eks_node_group_role_name" {
+  description = "The name of the IAM role for the EKS node group"
+  value       = module.iam.eks_node_group_role_name
+}
+
+output "eks_node_group_role_arn" {
+  description = "The ARN of the IAM role for the EKS node group"
+  value       = module.iam.eks_node_group_role_arn
+}
+
+output "eks_node_group_policies" {
+  description = "List of attached IAM policies for the node group role"
+  value       = module.iam.eks_node_group_policies
+}
+
+output "eks_cluster_policies" {
+  description = "List of attached IAM policies for the cluster role"
+  value       = module.iam.eks_cluster_policies
+}
+
+output "eks_cluster_name" {
+  description = "The name of the EKS cluster"
+  value       = module.eks.eks_cluster_name
+}
+
+output "eks_cluster_arn" {
+  description = "The ARN of the EKS cluster"
+  value       = module.eks.eks_cluster_arn
+}
+
+output "eks_cluster_endpoint" {
+  description = "The API server endpoint of the EKS cluster"
+  value       = module.eks.eks_cluster_endpoint
+}
+
+output "eks_node_group_name" {
+  description = "The name of the EKS node group"
+  value       = module.eks.eks_node_group_name
+}
+
+output "eks_node_group_arn" {
+  description = "The ARN of the EKS node group"
+  value       = module.eks.eks_node_group_arn
+}
