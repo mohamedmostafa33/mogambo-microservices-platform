@@ -28,16 +28,6 @@ resource "aws_security_group" "mogambo_catalogue_db_sg" {
   }
 }
 
-resource "aws_security_group" "mogambo_carts_db_sg" {
-  name        = "mogambo-carts-db-sg"
-  description = "Security group for the Mogambo Carts Database (DocumentDB)"
-  vpc_id      = var.vpc_id
-
-  tags = {
-    Name = "mogambo-carts-db-sg"
-  }
-}
-
 resource "aws_security_group_rule" "allow_alb_to_eks_node_group" {
   description              = "Allow ALB to communicate with EKS node group"
   type                     = "ingress"
@@ -128,22 +118,3 @@ resource "aws_security_group_rule" "allow_db_all_egress" {
   cidr_blocks       = ["0.0.0.0/0"]
 }
 
-resource "aws_security_group_rule" "allow_carts_db_access_from_eks" {
-  description              = "Allow EKS node group to access DocumentDB"
-  type                     = "ingress"
-  from_port                = 27017
-  to_port                  = 27017
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.mogambo_carts_db_sg.id
-  source_security_group_id = aws_security_group.mogambo_eks_node_group_sg.id
-}
-
-resource "aws_security_group_rule" "allow_carts_db_all_egress" {
-  description       = "Allow all outbound traffic from DocumentDB (via NAT)"
-  type              = "egress"
-  security_group_id = aws_security_group.mogambo_carts_db_sg.id
-  from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
-}
