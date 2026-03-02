@@ -13,7 +13,3 @@ output "catalogue_db_sg_id" {
   value       = aws_security_group.mogambo_catalogue_db_sg.id
 }
 
-output "carts_db_sg_id" {
-  description = "Security Group ID for the Carts Database (DocumentDB)"
-  value       = aws_security_group.mogambo_carts_db_sg.id
-}
