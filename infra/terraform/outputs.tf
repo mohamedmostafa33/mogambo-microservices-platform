@@ -174,3 +174,48 @@ output "docdb_instance_endpoints" {
     module.documentdb.docdb_instance_endpoints[0]
   ]
 }
+
+output "frontend_repository_name" {
+  description = "Name of the frontend ECR repository"
+  value       = module.ecr.frontend_repository_name
+}
+
+output "frontend_repository_url" {
+  description = "URL of the frontend ECR repository"
+  value       = module.ecr.frontend_repository_url
+}
+
+output "frontend_repository_arn" {
+  description = "ARN of the frontend ECR repository"
+  value       = module.ecr.frontend_repository_arn
+}
+
+output "catalogue_repository_name" {
+  description = "Name of the catalogue ECR repository"
+  value       = module.ecr.catalogue_repository_name
+}
+
+output "catalogue_repository_url" {
+  description = "URL of the catalogue ECR repository"
+  value       = module.ecr.catalogue_repository_url
+}
+
+output "catalogue_repository_arn" {
+  description = "ARN of the catalogue ECR repository"
+  value       = module.ecr.catalogue_repository_arn
+}
+
+output "cart_repository_name" {
+  description = "Name of the cart ECR repository"
+  value       = module.ecr.cart_repository_name
+}
+
+output "cart_repository_url" {
+  description = "URL of the cart ECR repository"
+  value       = module.ecr.cart_repository_url
+}
+
+output "cart_repository_arn" {
+  description = "ARN of the cart ECR repository"
+  value       = module.ecr.cart_repository_arn
+}

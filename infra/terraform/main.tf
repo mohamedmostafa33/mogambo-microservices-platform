@@ -40,3 +40,10 @@ module "documentdb" {
   docdb_security_group_id = module.sg.carts_db_sg_id
   docdb_instance_class    = var.docdb_instance_class
 }
+
+module "ecr" {
+  source = "./modules/ecr"
+  frontend_repository_name   = var.frontend_repository_name
+  catalogue_repository_name  = var.catalogue_repository_name
+  cart_repository_name       = var.cart_repository_name
+}
