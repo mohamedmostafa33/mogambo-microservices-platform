@@ -28,6 +28,16 @@ resource "aws_security_group" "mogambo_catalogue_db_sg" {
   }
 }
 
+resource "aws_security_group" "mogambo_sonarqube_sg" {
+  name        = "mogambo-sonarqube-sg"
+  description = "Security group for the Mogambo SonarQube instance"
+  vpc_id      = var.vpc_id
+
+  tags = {
+    Name = "mogambo-sonarqube-sg"
+  }
+}
+
 resource "aws_security_group_rule" "allow_alb_to_eks_node_group" {
   description              = "Allow ALB to communicate with EKS node group"
   type                     = "ingress"
@@ -118,3 +128,32 @@ resource "aws_security_group_rule" "allow_db_all_egress" {
   cidr_blocks       = ["0.0.0.0/0"]
 }
 
+resource "aws_security_group_rule" "allow_sonarqube_ssh_ingress" {
+  description              = "Allow SSH access to SonarQube instance"
+  type                     = "ingress"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.mogambo_sonarqube_sg.id
+  cidr_blocks              = ["0.0.0.0/0"]
+}
+
+resource "aws_security_group_rule" "allow_sonarqube_ingress" {
+  description              = "Allow inbound traffic to SonarQube"
+  type                     = "ingress"
+  from_port                = 9000
+  to_port                  = 9000
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.mogambo_sonarqube_sg.id
+  cidr_blocks              = ["0.0.0.0/0"]
+}
+
+resource "aws_security_group_rule" "allow_sonarqube_egress" {
+  description       = "Allow outbound traffic from SonarQube"
+  type              = "egress"
+  security_group_id = aws_security_group.mogambo_sonarqube_sg.id
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
