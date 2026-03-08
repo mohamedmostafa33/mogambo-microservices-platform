@@ -13,3 +13,8 @@ output "catalogue_db_sg_id" {
   value       = aws_security_group.mogambo_catalogue_db_sg.id
 }
 
+output "sonarqube_sg_id" {
+  description = "Security Group ID for the SonarQube EC2 instance"
+  value       = aws_security_group.mogambo_sonarqube_sg.id
+}
+

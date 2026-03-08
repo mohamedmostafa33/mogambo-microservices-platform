@@ -275,3 +275,28 @@ output "eks_node_group_arn" {
   description = "The ARN of the EKS node group"
   value       = module.eks.eks_node_group_arn
 }
+
+output "sonarqube_sg_id" {
+  description = "Security Group ID for the SonarQube EC2 instance"
+  value       = module.sg.sonarqube_sg_id
+}
+
+output "sonarqube_public_ip" {
+  description = "The public IP of the SonarQube EC2 instance"
+  value       = module.ec2.sonarqube_public_ip
+}
+
+output "sonarqube_instance_id" {
+  description = "The ID of the SonarQube EC2 instance"
+  value       = module.ec2.sonarqube_instance_id
+}
+
+output "sonarqube_private_ip" {
+  description = "The private IP of the SonarQube EC2 instance"
+  value       = module.ec2.sonarqube_private_ip
+}
+
+output "sonarqube_public_dns" {
+  description = "The public DNS of the SonarQube EC2 instance"
+  value       = module.ec2.sonarqube_public_dns
+}

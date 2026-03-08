@@ -178,3 +178,27 @@ variable "min_node_count" {
   type        = number
   default     = 5
 }
+
+variable "sonarqube_ami_id" {
+  description = "AMI ID for the SonarQube instance"
+  type        = string
+  default     = "ami-02dfbd4ff395f2a1b"
+}
+
+variable "sonarqube_instance_type" {
+  description = "Instance type for the SonarQube instance"
+  type        = string
+  default     = "c7i-flex.large"
+}
+
+variable "sonarqube_key_name" {
+  description = "Key pair name for the SonarQube instance"
+  type        = string
+  default     = "EC2-key"
+}
+
+variable "sonarqube_instance_name" {
+  description = "Name for the SonarQube instance"
+  type        = string
+  default     = "mogambo-sonarqube-instance"
+}

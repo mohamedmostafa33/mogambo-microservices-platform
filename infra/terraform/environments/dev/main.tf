@@ -12,6 +12,16 @@ module "sg" {
   vpc_id = module.vpc.vpc_id
 }
 
+module "ec2" {
+  source                       = "../../modules/ec2"
+  sonarqube_ami_id             = var.sonarqube_ami_id
+  sonarqube_instance_type      = var.sonarqube_instance_type
+  sonarqube_subnet_id          = module.vpc.public_subnet_ids[0]
+  sonarqube_security_group_id  = module.sg.sonarqube_sg_id
+  sonarqube_key_name           = var.sonarqube_key_name
+  sonarqube_instance_name      = var.sonarqube_instance_name
+}
+
 module "rds" {
   source                   = "../../modules/rds"
   db_subnet_group_name     = var.db_subnet_group_name
