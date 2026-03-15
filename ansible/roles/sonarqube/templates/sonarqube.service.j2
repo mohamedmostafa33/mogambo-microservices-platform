@@ -1,0 +1,20 @@
+[Unit]
+Description=SonarQube service
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=forking
+User={{ sonarqube_user }}
+Group={{ sonarqube_group }}
+ExecStart={{ sonarqube_current_dir }}/bin/linux-x86-64/sonar.sh start
+ExecStop={{ sonarqube_current_dir }}/bin/linux-x86-64/sonar.sh stop
+LimitNOFILE={{ sonarqube_limit_nofile }}
+LimitNPROC={{ sonarqube_limit_nproc }}
+TimeoutStartSec={{ sonarqube_service_timeout_start_sec }}
+Restart=on-failure
+RestartSec={{ sonarqube_service_restart_sec }}
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target

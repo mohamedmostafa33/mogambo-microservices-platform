@@ -1,0 +1,264 @@
+---
+- name: Validate target OS
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == 'Amazon'
+      - ansible_distribution_major_version == '2023'
+    fail_msg: This role supports Amazon Linux 2023 only.
+
+- name: Optionally update system packages
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+    update_only: true
+  when: sonarqube_update_system | bool
+
+- name: Install required packages
+  ansible.builtin.dnf:
+    name: "{{ [sonarqube_java_package] + sonarqube_extra_packages }}"
+    state: present
+
+- name: Check whether swapfile exists
+  ansible.builtin.stat:
+    path: /swapfile
+  register: sonarqube_swapfile_stat
+  when: sonarqube_manage_swap | bool
+
+- name: Create swap file
+  ansible.builtin.command: "fallocate -l {{ sonarqube_swap_size_gb }}G /swapfile"
+  args:
+    creates: /swapfile
+  when:
+    - sonarqube_manage_swap | bool
+    - not sonarqube_swapfile_stat.stat.exists
+
+- name: Set swapfile permissions
+  ansible.builtin.file:
+    path: /swapfile
+    owner: root
+    group: root
+    mode: "0600"
+  when: sonarqube_manage_swap | bool
+
+- name: Format swap file
+  ansible.builtin.command: mkswap /swapfile
+  when:
+    - sonarqube_manage_swap | bool
+    - not sonarqube_swapfile_stat.stat.exists
+
+- name: Ensure swap entry exists in fstab
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    line: "/swapfile none swap sw 0 0"
+    state: present
+  when: sonarqube_manage_swap | bool
+
+- name: Enable swap immediately if not active
+  ansible.builtin.shell: |
+    if ! swapon --show | grep -q '^/swapfile'; then
+      swapon /swapfile
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: false
+  when: sonarqube_manage_swap | bool
+
+- name: Ensure sysctl configuration file exists
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/99-sonarqube.conf
+    mode: "0644"
+    content: |
+      vm.max_map_count={{ sonarqube_vm_max_map_count }}
+      fs.file-max={{ sonarqube_fs_file_max }}
+  notify: apply sonarqube sysctl
+
+- name: Ensure process limits are configured
+  ansible.builtin.copy:
+    dest: /etc/security/limits.d/99-sonarqube.conf
+    mode: "0644"
+    content: |
+      {{ sonarqube_user }} - nofile {{ sonarqube_limit_nofile }}
+      {{ sonarqube_user }} - nproc {{ sonarqube_limit_nproc }}
+
+- name: Create SonarQube group
+  ansible.builtin.group:
+    name: "{{ sonarqube_group }}"
+    system: true
+    state: present
+
+- name: Create SonarQube user
+  ansible.builtin.user:
+    name: "{{ sonarqube_user }}"
+    group: "{{ sonarqube_group }}"
+    shell: /sbin/nologin
+    home: "{{ sonarqube_base_dir }}"
+    system: true
+    create_home: false
+    state: present
+
+- name: Ensure SonarQube base directory exists
+  ansible.builtin.file:
+    path: "{{ sonarqube_base_dir }}"
+    state: directory
+    owner: "{{ sonarqube_user }}"
+    group: "{{ sonarqube_group }}"
+    mode: "0750"
+
+- name: Ensure runtime directories exist
+  ansible.builtin.file:
+    path: "{{ sonarqube_base_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ sonarqube_user }}"
+    group: "{{ sonarqube_group }}"
+    mode: "0750"
+  loop: "{{ sonarqube_runtime_dirs }}"
+
+- name: Check whether PostgreSQL data directory is initialized
+  ansible.builtin.stat:
+    path: /var/lib/pgsql/data/PG_VERSION
+  register: sonarqube_pgdata
+
+- name: Initialize PostgreSQL database
+  ansible.builtin.command: /usr/bin/postgresql-setup --initdb
+  when: not sonarqube_pgdata.stat.exists
+
+- name: Ensure PostgreSQL is enabled and started
+  ansible.builtin.service:
+    name: postgresql
+    enabled: true
+    state: started
+
+- name: Ensure firewalld is enabled and started
+  ansible.builtin.service:
+    name: firewalld
+    enabled: true
+    state: started
+  when: sonarqube_manage_firewalld | bool
+
+- name: Open SonarQube port in firewalld
+  ansible.posix.firewalld:
+    port: "{{ sonarqube_port }}/tcp"
+    permanent: true
+    immediate: true
+    state: enabled
+  when: sonarqube_manage_firewalld | bool
+
+- name: Force local TCP auth for IPv4
+  ansible.builtin.lineinfile:
+    path: /var/lib/pgsql/data/pg_hba.conf
+    regexp: '^host\s+all\s+all\s+127\.0\.0\.1/32\s+.*$'
+    line: 'host all all 127.0.0.1/32 {{ sonarqube_db_auth_method }}'
+  notify: restart postgresql
+
+- name: Force local TCP auth for IPv6
+  ansible.builtin.lineinfile:
+    path: /var/lib/pgsql/data/pg_hba.conf
+    regexp: '^host\s+all\s+all\s+::1/128\s+.*$'
+    line: 'host all all ::1/128 {{ sonarqube_db_auth_method }}'
+  notify: restart postgresql
+
+- name: Flush handlers before PostgreSQL administration
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure SonarQube PostgreSQL user exists
+  community.postgresql.postgresql_user:
+    name: "{{ sonarqube_db_user }}"
+    password: "{{ sonarqube_db_password }}"
+    encrypted: true
+    role_attr_flags: NOSUPERUSER,NOCREATEDB,NOCREATEROLE,LOGIN
+  become: true
+  become_user: postgres
+
+- name: Ensure SonarQube PostgreSQL database exists
+  community.postgresql.postgresql_db:
+    name: "{{ sonarqube_db_name }}"
+    owner: "{{ sonarqube_db_user }}"
+    encoding: UTF-8
+  become: true
+  become_user: postgres
+
+- name: Download SonarQube archive
+  ansible.builtin.get_url:
+    url: "{{ sonarqube_download_url }}"
+    dest: "{{ sonarqube_zip_path }}"
+    mode: "0644"
+
+- name: Check whether requested SonarQube version is already installed
+  ansible.builtin.stat:
+    path: "{{ sonarqube_install_dir }}"
+  register: sonarqube_install_stat
+
+- name: Extract SonarQube archive
+  ansible.builtin.unarchive:
+    src: "{{ sonarqube_zip_path }}"
+    dest: "{{ sonarqube_base_dir }}"
+    remote_src: true
+    owner: "{{ sonarqube_user }}"
+    group: "{{ sonarqube_group }}"
+  when: not sonarqube_install_stat.stat.exists
+
+- name: Ensure current symlink points to requested version
+  ansible.builtin.file:
+    src: "{{ sonarqube_install_dir }}"
+    dest: "{{ sonarqube_current_dir }}"
+    state: link
+    force: true
+    owner: "{{ sonarqube_user }}"
+    group: "{{ sonarqube_group }}"
+
+- name: Configure SonarQube application properties
+  ansible.builtin.template:
+    src: sonar.properties.j2
+    dest: "{{ sonarqube_current_dir }}/conf/sonar.properties"
+    owner: "{{ sonarqube_user }}"
+    group: "{{ sonarqube_group }}"
+    mode: "0640"
+  notify: restart sonarqube
+
+- name: Force SonarQube runtime user in startup script
+  ansible.builtin.lineinfile:
+    path: "{{ sonarqube_current_dir }}/bin/linux-x86-64/sonar.sh"
+    regexp: '^#?RUN_AS_USER=.*$'
+    line: "RUN_AS_USER={{ sonarqube_user }}"
+  notify: restart sonarqube
+
+- name: Ensure SonarQube installation ownership is correct
+  ansible.builtin.file:
+    path: "{{ sonarqube_base_dir }}"
+    state: directory
+    recurse: true
+    owner: "{{ sonarqube_user }}"
+    group: "{{ sonarqube_group }}"
+
+- name: Install SonarQube systemd unit
+  ansible.builtin.template:
+    src: sonarqube.service.j2
+    dest: /etc/systemd/system/sonarqube.service
+    mode: "0644"
+  notify:
+    - daemon reload
+    - restart sonarqube
+
+- name: Ensure SonarQube service is enabled and started
+  ansible.builtin.systemd:
+    name: sonarqube
+    daemon_reload: true
+    enabled: true
+    state: started
+
+- name: Wait for SonarQube TCP port
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: "{{ sonarqube_port }}"
+    timeout: 600
+    delay: 10
+
+- name: Wait for SonarQube API status to become UP
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ sonarqube_port }}/api/system/status"
+    return_content: true
+    status_code: 200
+  register: sonarqube_status
+  retries: 60
+  delay: 10
+  until: sonarqube_status.content is search('"status":"UP"')
