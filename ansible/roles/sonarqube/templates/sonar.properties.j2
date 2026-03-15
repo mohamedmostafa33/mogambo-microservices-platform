@@ -1,0 +1,19 @@
+# Network
+sonar.web.host=0.0.0.0
+sonar.web.port={{ sonarqube_port }}
+
+# Database
+sonar.jdbc.username={{ sonarqube_db_user }}
+sonar.jdbc.password={{ sonarqube_db_password }}
+sonar.jdbc.url=jdbc:postgresql://{{ sonarqube_db_host }}:{{ sonarqube_db_port }}/{{ sonarqube_db_name }}
+
+# Paths
+sonar.path.data={{ sonarqube_base_dir }}/data
+sonar.path.temp={{ sonarqube_base_dir }}/temp
+sonar.path.logs={{ sonarqube_base_dir }}/logs
+
+# Conservative JVM
+sonar.search.javaOpts=-Xms{{ sonarqube_search_xms }} -Xmx{{ sonarqube_search_xmx }} -XX:+HeapDumpOnOutOfMemoryError
+sonar.web.javaOpts=-Xms{{ sonarqube_web_xms }} -Xmx{{ sonarqube_web_xmx }} -XX:+HeapDumpOnOutOfMemoryError
+sonar.ce.javaOpts=-Xms{{ sonarqube_ce_xms }} -Xmx{{ sonarqube_ce_xmx }} -XX:+HeapDumpOnOutOfMemoryError
+sonar.ce.workerCount={{ sonarqube_ce_worker_count }}

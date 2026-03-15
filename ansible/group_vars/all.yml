@@ -1,0 +1,21 @@
+---
+sonarqube_version: "10.6.0.92116"
+sonarqube_port: 9000
+
+sonarqube_db_name: "sonarqube"
+sonarqube_db_user: "sonar"
+sonarqube_db_password: "ChangeMe_StrongPassword_123!"
+
+sonarqube_manage_swap: true
+sonarqube_swap_size_gb: 4
+sonarqube_manage_firewalld: true
+
+sonarqube_search_xms: "768m"
+sonarqube_search_xmx: "768m"
+sonarqube_web_xms: "384m"
+sonarqube_web_xmx: "384m"
+sonarqube_ce_xms: "384m"
+sonarqube_ce_xmx: "384m"
+sonarqube_ce_worker_count: 1
+
+sonarqube_update_system: false
