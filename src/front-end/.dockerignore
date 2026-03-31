@@ -1,0 +1,17 @@
+node_modules
+npm-debug.log*
+yarn-error.log*
+coverage
+results
+distribution
+test
+.git
+.github
+.travis.yml
+shippable.yml
+docker-compose.yml
+README.md
+CHANGELOG.txt
+.nycrc.json
+.argocdignore
+scripts
