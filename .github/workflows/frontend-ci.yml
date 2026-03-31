@@ -1,0 +1,45 @@
+name: Front-end CI Pipeline
+
+run-name: Front-end CI - ${{ github.event_name }}
+
+on:
+
+  push:
+    branches:
+      - 'dev'
+
+  pull_request:
+    branches:
+      - 'dev'
+      - 'main'
+  
+permissions:
+  contents: read
+
+env:
+  aws-region: us-east-1
+
+jobs:
+  
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.detect.outputs.frontend }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect changes in frontend
+        id: detect
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'src/front-end/**'
+
+      - name: Show change detection result
+        run: |
+          echo "Changes detected: ${{ steps.detect.outputs.frontend }}"
+
+      
