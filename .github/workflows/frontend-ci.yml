@@ -3,7 +3,6 @@ name: Front-end CI Pipeline
 run-name: Front-end CI - ${{ github.event_name }}
 
 on:
-
   push:
     branches:
       - 'dev'
@@ -12,7 +11,7 @@ on:
     branches:
       - 'dev'
       - 'main'
-  
+
 permissions:
   contents: read
 
@@ -20,7 +19,6 @@ env:
   aws-region: us-east-1
 
 jobs:
-  
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
@@ -42,4 +40,70 @@ jobs:
         run: |
           echo "Changes detected: ${{ steps.detect.outputs.frontend }}"
 
-      
+  build-and-test:
+    needs: [detect-changes]
+    runs-on: ubuntu-latest
+    if: needs.detect-changes.outputs.frontend == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: src/front-end/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: src/front-end
+        run: |
+          npm ci --legacy-peer-deps
+
+      - name: Lint frontend code
+        working-directory: src/front-end
+        run: |
+          npm run lint
+
+      - name: Type check
+        working-directory: src/front-end
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        working-directory: src/front-end
+        run: npm test -- --ci --watchAll=false
+
+      - name: Build frontend
+        working-directory: src/front-end
+        run: |
+          npm run build
+
+  docker:
+    needs: [build-and-test]
+    runs-on: ubuntu-latest
+    if: |
+      needs.build-and-test.result == 'success'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Get Commit SHA
+        id: get-sha
+        run: echo "COMMIT_SHA=${{ github.sha }}" >> $GITHUB_ENV
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/front-end:${{ env.COMMIT_SHA }} -f src/front-end/Dockerfile .
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/front-end:${{ env.COMMIT_SHA }}
+
+
