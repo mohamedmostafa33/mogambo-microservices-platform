@@ -85,13 +85,13 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v6
         with:
           projectBaseDir: 'src/front-end'
-          extraProperties: |
-            sonar.projectKey=front-end
-            sonar.projectName=Front-end
-            sonar.sources=api,helpers,server.js,config.js,public/js
-            sonar.tests=test
-            sonar.exclusions=**/node_modules/**,**/*.min.js,**/public/js/jquery*.js,**/public/js/bootstrap*.js,**/public/js/owl*.js,**/public/js/modernizr.js,**/public/css/**,**/public/img/**,**/public/fonts/**
-            sonar.test.inclusions=test/**/*.js
+          args: >
+            -Dsonar.projectKey=front-end
+            -Dsonar.projectName=Front-end
+            -Dsonar.sources=api,helpers,server.js,config.js,public/js
+            -Dsonar.tests=test
+            -Dsonar.exclusions=**/node_modules/**,**/*.min.js,**/public/js/jquery*.js,**/public/js/bootstrap*.js,**/public/js/owl*.js,**/public/js/modernizr.js,**/public/css/**,**/public/img/**,**/public/fonts/**
+            -Dsonar.test.inclusions=test/**/*.js
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
