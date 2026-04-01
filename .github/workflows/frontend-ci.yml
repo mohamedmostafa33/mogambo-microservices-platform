@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 env:
   aws-region: us-east-1
@@ -60,6 +61,17 @@ jobs:
         run: |
           npm ci --legacy-peer-deps
 
+      - name: OWASP Dependency Check
+        continue-on-error: true
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'front-end'
+          path: 'src/front-end'
+          format: 'HTML'
+          args: >
+            --failOnCVSS 7
+            --disableYarnAudit
+
       - name: Run tests
         working-directory: src/front-end
         run: npm test
@@ -68,6 +80,29 @@ jobs:
         working-directory: src/front-end
         run: |
           npm run build
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          projectBaseDir: 'src/front-end'
+          args: >
+            -Dsonar.projectKey=front-end
+            -Dsonar.projectName=Front-end
+            -Dsonar.sources=api,helpers,server.js,config.js,public/js
+            -Dsonar.tests=test
+            -Dsonar.exclusions=**/node_modules/**,**/*.min.js,**/public/js/jquery*.js,**/public/js/bootstrap*.js,**/public/js/owl*.js,**/public/js/modernizr.js,**/public/css/**,**/public/img/**,**/public/fonts/**
+            -Dsonar.test.inclusions=test/**/*.js
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: SonarQube Quality Gate Check
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        with:
+          scanMetadataReportFile: src/front-end/.scannerwork/report-task.txt
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
   docker:
     needs: [build-and-test]
@@ -81,20 +116,26 @@ jobs:
 
       - name: Get Commit SHA
         id: get-sha
-        run: echo "COMMIT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
-      - name: Log in to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+        run: echo "commit_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/front-end:${{ env.COMMIT_SHA }} src/front-end
+          docker build -t mogambo-frontend src/front-end
+
+      - name: Tag Docker image for ECR
+        run: |
+          docker tag mogambo-frontend:latest ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.aws-region }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ env.aws-region }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_REGISTRY_URL }}
 
       - name: Push Docker image
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/front-end:${{ env.COMMIT_SHA }}
-
-
+          docker push ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }}
