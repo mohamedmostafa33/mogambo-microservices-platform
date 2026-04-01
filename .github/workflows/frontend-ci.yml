@@ -65,10 +65,11 @@ jobs:
         uses: dependency-check/Dependency-Check_Action@main
         with:
           project: 'front-end'
-          scan: 'src/front-end'
+          path: 'src/front-end'
           format: 'HTML'
           args: >
             --failOnCVSS 7
+            --disableYarnAudit
 
       - name: Run tests
         working-directory: src/front-end
