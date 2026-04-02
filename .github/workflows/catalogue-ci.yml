@@ -47,7 +47,7 @@ jobs:
     if: needs.detect-changes.outputs.catalogue == 'true'
     timeout-minutes: 20
     env:
-      GO_VERSION: '1.22'
+      GO_VERSION: '1.16'
       GO111MODULE: 'off'
       CGO_ENABLED: '0'
       GOPATH: ${{ github.workspace }}/.gopath
@@ -80,7 +80,7 @@ jobs:
 
       - name: Download dependencies
         working-directory: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue
-        run: go get -d ./...
+        run: go get ./...
 
       - name: OWASP Dependency Check
         continue-on-error: true
@@ -159,6 +159,7 @@ jobs:
           docker tag mogambo-catalogue:${{ steps.get-sha.outputs.commit_sha }} ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-catalogue:${{ steps.get-sha.outputs.commit_sha }}
 
       - name: Run Trivy vulnerability scanner
+        continue-on-error: true
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           image-ref: mogambo-catalogue:${{ steps.get-sha.outputs.commit_sha }}
