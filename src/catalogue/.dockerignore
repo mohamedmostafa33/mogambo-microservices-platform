@@ -1,0 +1,12 @@
+.git
+.github
+README.md
+docker-compose*.yml
+scripts
+test
+vendor
+data
+docker/catalogue-db
+*.md
+*.log
+coverage
