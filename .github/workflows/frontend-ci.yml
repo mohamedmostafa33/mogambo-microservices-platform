@@ -45,6 +45,7 @@ jobs:
     needs: [detect-changes]
     runs-on: ubuntu-latest
     if: needs.detect-changes.outputs.frontend == 'true'
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -82,6 +83,7 @@ jobs:
           npm run build
 
       - name: SonarQube Scan
+        if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != '' }}
         uses: SonarSource/sonarqube-scan-action@v6
         with:
           projectBaseDir: 'src/front-end'
@@ -97,6 +99,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
       - name: SonarQube Quality Gate Check
+        if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != '' }}
         uses: SonarSource/sonarqube-quality-gate-action@v1
         with:
           scanMetadataReportFile: src/front-end/.scannerwork/report-task.txt
@@ -105,9 +108,11 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
   docker:
-    needs: [build-and-test]
+    needs: [detect-changes, build-and-test]
     runs-on: ubuntu-latest
     if: |
+      github.event_name == 'push' &&
+      needs.detect-changes.outputs.frontend == 'true' &&
       needs.build-and-test.result == 'success'
 
     steps:
@@ -129,7 +134,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
-          image-ref: ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }}
+          image-ref: mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
