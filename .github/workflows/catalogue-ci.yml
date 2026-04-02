@@ -65,8 +65,8 @@ jobs:
 
       - name: Prepare GOPATH layout
         run: |
-          mkdir -p "$GOPATH/src/github.com/microservices-demo"
-          ln -s "$GITHUB_WORKSPACE/src/catalogue" "$GOPATH/src/github.com/microservices-demo/catalogue"
+          mkdir -p "$GOPATH/src/github.com/microservices-demo/catalogue"
+          cp -R "$GITHUB_WORKSPACE/src/catalogue/." "$GOPATH/src/github.com/microservices-demo/catalogue/"
 
       - name: Cache Go build artifacts
         uses: actions/cache@v4
@@ -94,6 +94,15 @@ jobs:
           set -euo pipefail
           test -f vendor/manifest
           gvt restore
+
+      - name: Normalize GOPATH for vendored dependencies
+        working-directory: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue
+        run: |
+          set -euo pipefail
+          if [ -d vendor/src ]; then
+            echo "GOPATH=$GOPATH:$PWD/vendor" >> "$GITHUB_ENV"
+          fi
+          test -d vendor
 
       - name: OWASP Dependency Check
         continue-on-error: true
