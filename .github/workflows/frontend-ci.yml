@@ -46,6 +46,9 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.detect-changes.outputs.frontend == 'true'
     timeout-minutes: 20
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
     steps:
       - name: Checkout repository
@@ -83,7 +86,7 @@ jobs:
           npm run build
 
       - name: SonarQube Scan
-        if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != '' }}
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: SonarSource/sonarqube-scan-action@v6
         with:
           projectBaseDir: 'src/front-end'
@@ -99,7 +102,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
       - name: SonarQube Quality Gate Check
-        if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != '' }}
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: SonarSource/sonarqube-quality-gate-action@v1
         with:
           scanMetadataReportFile: src/front-end/.scannerwork/report-task.txt
