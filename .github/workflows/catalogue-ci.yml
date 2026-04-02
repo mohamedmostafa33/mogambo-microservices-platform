@@ -51,6 +51,8 @@ jobs:
       GO111MODULE: 'off'
       CGO_ENABLED: '0'
       GOPATH: ${{ github.workspace }}/.gopath
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
     steps:
       - name: Checkout repository
@@ -108,7 +110,7 @@ jobs:
         run: go test ./... -coverprofile=coverage.out
 
       - name: SonarQube Scan
-        if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != '' }}
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: SonarSource/sonarqube-scan-action@v6
         with:
           projectBaseDir: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue
@@ -124,7 +126,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
       - name: SonarQube Quality Gate Check
-        if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != '' }}
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: SonarSource/sonarqube-quality-gate-action@v1
         with:
           scanMetadataReportFile: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue/.scannerwork/report-task.txt
