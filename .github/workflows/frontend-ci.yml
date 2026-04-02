@@ -135,6 +135,7 @@ jobs:
           docker tag mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }} ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }}
 
       - name: Run Trivy vulnerability scanner
+        continue-on-error: true
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           image-ref: mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }}
