@@ -120,11 +120,21 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t mogambo-frontend src/front-end
+          docker build -t mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }} src/front-end
 
       - name: Tag Docker image for ECR
         run: |
-          docker tag mogambo-frontend:latest ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }}
+          docker tag mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }} ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          image-ref: ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
