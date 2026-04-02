@@ -78,9 +78,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-${{ env.GO_VERSION }}-catalogue-
 
-      - name: Download dependencies
+      - name: Install gvt
         working-directory: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue
-        run: go get ./...
+        run: |
+          set -euo pipefail
+          go get -u github.com/FiloSottile/gvt
+          test -x "$GOPATH/bin/gvt"
+
+      - name: Add GOPATH bin to PATH
+        run: echo "$GOPATH/bin" >> "$GITHUB_PATH"
+
+      - name: Restore dependencies
+        working-directory: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue
+        run: |
+          set -euo pipefail
+          test -f vendor/manifest
+          gvt restore
 
       - name: OWASP Dependency Check
         continue-on-error: true
