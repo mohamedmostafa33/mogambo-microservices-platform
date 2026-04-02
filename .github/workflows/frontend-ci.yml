@@ -45,6 +45,10 @@ jobs:
     needs: [detect-changes]
     runs-on: ubuntu-latest
     if: needs.detect-changes.outputs.frontend == 'true'
+    timeout-minutes: 20
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
     steps:
       - name: Checkout repository
@@ -82,6 +86,7 @@ jobs:
           npm run build
 
       - name: SonarQube Scan
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: SonarSource/sonarqube-scan-action@v6
         with:
           projectBaseDir: 'src/front-end'
@@ -97,6 +102,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
       - name: SonarQube Quality Gate Check
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: SonarSource/sonarqube-quality-gate-action@v1
         with:
           scanMetadataReportFile: src/front-end/.scannerwork/report-task.txt
@@ -105,9 +111,11 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
   docker:
-    needs: [build-and-test]
+    needs: [detect-changes, build-and-test]
     runs-on: ubuntu-latest
     if: |
+      github.event_name == 'push' &&
+      needs.detect-changes.outputs.frontend == 'true' &&
       needs.build-and-test.result == 'success'
 
     steps:
@@ -120,11 +128,21 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t mogambo-frontend src/front-end
+          docker build -t mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }} src/front-end
 
       - name: Tag Docker image for ECR
         run: |
-          docker tag mogambo-frontend:latest ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }}
+          docker tag mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }} ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          image-ref: mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
