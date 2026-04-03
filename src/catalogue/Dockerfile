@@ -2,7 +2,7 @@ FROM golang:1.22-alpine AS deps
 
 RUN apk add --no-cache ca-certificates git
 
-ENV GOPATH=/go \
+ENV GOPATH=/go:/go/src/github.com/microservices-demo/catalogue/vendor \
     GO111MODULE=off \
     CGO_ENABLED=0 \
     GOOS=linux
@@ -12,12 +12,14 @@ WORKDIR /go/src/github.com/microservices-demo/catalogue
 # Copy only source files first so dependency downloads can be cached.
 COPY *.go ./
 COPY cmd ./cmd
+COPY vendor/manifest ./vendor/manifest
 
-RUN go get -d ./...
+RUN GO111MODULE=on go install github.com/FiloSottile/gvt@latest \
+    && /go/bin/gvt restore
 
 FROM golang:1.22-alpine AS build
 
-ENV GOPATH=/go \
+ENV GOPATH=/go:/go/src/github.com/microservices-demo/catalogue/vendor \
     GO111MODULE=off \
     CGO_ENABLED=0 \
     GOOS=linux
