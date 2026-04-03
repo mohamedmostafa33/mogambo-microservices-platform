@@ -6,6 +6,8 @@ Front-end app
 ---
 Front-end application written in [Node.js](https://nodejs.org/en/) that puts together all of the microservices under [microservices-demo](https://github.com/microservices-demo/microservices-demo).
 
+Note: Non-functional documentation update to trigger CI path-based workflow checks.
+
 
 # Setting up Dev Env
 
@@ -131,6 +133,18 @@ module.exports = {
   registerUrl:   util.format("http://user%s/register", domain),
 };
 
+```
+
+For environments where carts does not listen on port 80, you can override carts routing without code changes:
+
+```
+export CARTS_PORT=8080
+```
+
+or provide a full base URL:
+
+```
+export CARTS_BASE_URL=http://carts:8080
 ```
 ===========================
 

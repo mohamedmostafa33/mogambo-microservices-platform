@@ -1,0 +1,88 @@
+name: Infrastructure Deployment Pipeline
+
+run-name: Infrastructure Deployment - ${{ github.event.inputs.action }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Select the infrastructure deployment action'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+          - outputs
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  terraform:
+    name: Terraform ${{ github.event.inputs.action }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Initialize
+        working-directory: ./infra/terraform/environments/dev
+        run: |
+          echo "Initializing Terraform backend and providers..."
+          terraform init
+      
+      - name: Terraform Validation
+        working-directory: ./infra/terraform/environments/dev
+        run: |
+          echo "Validating Terraform configuration..."
+          terraform validate
+
+      - name: Terraform Plan
+        if: ${{ github.event.inputs.action == 'plan' }}
+        working-directory: ./infra/terraform/environments/dev
+        run: |
+          echo "Generating Terraform execution plan..."
+          terraform plan -out=tfplan
+          echo "Plan completed successfully!"
+
+      - name: Terraform Apply
+        if: ${{ github.event.inputs.action == 'apply' }}
+        working-directory: ./infra/terraform/environments/dev
+        run: |
+          echo "Applying Terraform configuration..."
+          terraform apply -auto-approve -input=false
+          echo "Apply completed successfully!"
+        
+      - name: Terraform Destroy
+        if: ${{ github.event.inputs.action == 'destroy' }}
+        working-directory: ./infra/terraform/environments/dev
+        run: |
+          echo "Destroying Terraform-managed infrastructure..."
+          terraform destroy -auto-approve
+          echo "Destroy completed successfully!"
+      
+      - name: Terraform Outputs
+        if: ${{ github.event.inputs.action == 'outputs' }}
+        working-directory: ./infra/terraform/environments/dev
+        run: |
+          echo "Retrieving Terraform outputs..."
+          terraform output -json > terraform_outputs.json
+          echo "Outputs retrieved successfully!"
+          cat terraform_outputs.json

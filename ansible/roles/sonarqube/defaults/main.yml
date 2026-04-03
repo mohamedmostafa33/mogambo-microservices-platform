@@ -1,0 +1,53 @@
+---
+sonarqube_version: "10.6.0.92116"
+sonarqube_user: "sonarqube"
+sonarqube_group: "sonarqube"
+sonarqube_port: 9000
+sonarqube_base_dir: "/opt/sonarqube"
+sonarqube_download_url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-{{ sonarqube_version }}.zip"
+sonarqube_zip_path: "/tmp/sonarqube-{{ sonarqube_version }}.zip"
+sonarqube_install_dir: "{{ sonarqube_base_dir }}/sonarqube-{{ sonarqube_version }}"
+sonarqube_current_dir: "{{ sonarqube_base_dir }}/current"
+sonarqube_runtime_dirs:
+  - data
+  - temp
+  - logs
+  - extensions
+
+sonarqube_db_name: "sonarqube"
+sonarqube_db_user: "sonar"
+sonarqube_db_password: "ChangeMe_StrongPassword_123!"
+sonarqube_db_host: "127.0.0.1"
+sonarqube_db_port: 5432
+sonarqube_db_auth_method: "scram-sha-256"
+
+sonarqube_java_package: "java-17-amazon-corretto-headless"
+sonarqube_extra_packages:
+  - wget
+  - unzip
+  - tar
+  - postgresql15
+  - postgresql15-server
+  - python3-psycopg2
+  - firewalld
+
+sonarqube_update_system: false
+sonarqube_manage_swap: true
+sonarqube_swap_size_gb: 4
+sonarqube_manage_firewalld: true
+
+sonarqube_search_xms: "768m"
+sonarqube_search_xmx: "768m"
+sonarqube_web_xms: "384m"
+sonarqube_web_xmx: "384m"
+sonarqube_ce_xms: "384m"
+sonarqube_ce_xmx: "384m"
+sonarqube_ce_worker_count: 1
+
+sonarqube_vm_max_map_count: 262144
+sonarqube_fs_file_max: 131072
+sonarqube_limit_nofile: 131072
+sonarqube_limit_nproc: 8192
+
+sonarqube_service_timeout_start_sec: 300
+sonarqube_service_restart_sec: 15

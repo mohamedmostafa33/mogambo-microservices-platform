@@ -1,0 +1,14 @@
+.git
+.github
+target
+test
+scripts
+docker
+api-spec
+README.md
+LICENSE
+remote-demo.yml
+docker-compose-zipkin.yml
+.travis.yml
+circle.yml
+*.log

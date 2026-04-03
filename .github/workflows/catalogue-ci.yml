@@ -1,0 +1,206 @@
+name: Catalogue CI Pipeline
+
+run-name: Catalogue CI - ${{ github.event_name }}
+
+on:
+  push:
+    branches:
+      - 'dev'
+
+  pull_request:
+    branches:
+      - 'dev'
+      - 'main'
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  aws-region: us-east-1
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      catalogue: ${{ steps.detect.outputs.catalogue }}
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Detect changes in catalogue
+        id: detect
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            catalogue:
+              - 'src/catalogue/**'
+        
+      - name: Show change detection result
+        run: |
+          echo "Changes detected: ${{ steps.detect.outputs.catalogue }}"
+
+  build-and-test:
+    needs: [detect-changes]
+    runs-on: ubuntu-latest
+    if: needs.detect-changes.outputs.catalogue == 'true'
+    timeout-minutes: 20
+    env:
+      GO_VERSION: '1.16'
+      GO111MODULE: 'off'
+      CGO_ENABLED: '0'
+      GOPATH: ${{ github.workspace }}/.gopath
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Prepare GOPATH layout
+        run: |
+          mkdir -p "$GOPATH/src/github.com/microservices-demo/catalogue"
+          cp -R "$GITHUB_WORKSPACE/src/catalogue/." "$GOPATH/src/github.com/microservices-demo/catalogue/"
+
+      - name: Cache Go build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ${{ env.GOPATH }}/pkg
+          key: ${{ runner.os }}-go-${{ env.GO_VERSION }}-catalogue-${{ hashFiles('src/catalogue/**/*.go') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ env.GO_VERSION }}-catalogue-
+
+      - name: Install gvt
+        working-directory: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue
+        run: |
+          set -euo pipefail
+          go get -u github.com/FiloSottile/gvt
+          test -x "$GOPATH/bin/gvt"
+
+      - name: Add GOPATH bin to PATH
+        run: echo "$GOPATH/bin" >> "$GITHUB_PATH"
+
+      - name: Restore dependencies
+        working-directory: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue
+        run: |
+          set -euo pipefail
+          test -f vendor/manifest
+          gvt restore
+
+      - name: Normalize GOPATH for vendored dependencies
+        working-directory: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue
+        run: |
+          set -euo pipefail
+          if [ -d vendor/src ]; then
+            echo "GOPATH=$GOPATH:$PWD/vendor" >> "$GITHUB_ENV"
+          fi
+          test -d vendor
+
+      - name: OWASP Dependency Check
+        continue-on-error: true
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'catalogue'
+          path: 'src/catalogue'
+          format: 'HTML'
+          args: >
+            --failOnCVSS 7
+            --disableYarnAudit
+
+      - name: Run tests
+        working-directory: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue
+        run: go test -v ./...
+
+      - name: Run go vet
+        working-directory: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue
+        run: go vet ./...
+
+      - name: Build catalogue
+        working-directory: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue
+        run: go build -trimpath -ldflags="-s -w" -o catalogue ./cmd/cataloguesvc
+
+      - name: Generate coverage report
+        working-directory: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue
+        run: go test ./... -coverprofile=coverage.out
+
+      - name: SonarQube Scan
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          projectBaseDir: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue
+          args: >
+            -Dsonar.projectKey=catalogue
+            -Dsonar.projectName=Catalogue
+            -Dsonar.sources=.
+            -Dsonar.tests=.
+            -Dsonar.test.inclusions=**/*_test.go
+            -Dsonar.go.coverage.reportPaths=coverage.out
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: SonarQube Quality Gate Check
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        with:
+          scanMetadataReportFile: ${{ env.GOPATH }}/src/github.com/microservices-demo/catalogue/.scannerwork/report-task.txt
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+  
+  docker:
+    needs: [detect-changes, build-and-test]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      needs.detect-changes.outputs.catalogue == 'true' &&
+      needs.build-and-test.result == 'success'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Get Commit SHA
+        id: get-sha
+        run: echo "commit_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: |
+          docker build -t mogambo-catalogue:${{ steps.get-sha.outputs.commit_sha }} src/catalogue
+
+      - name: Tag Docker image for ECR
+        run: |
+          docker tag mogambo-catalogue:${{ steps.get-sha.outputs.commit_sha }} ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-catalogue:${{ steps.get-sha.outputs.commit_sha }}
+
+      - name: Run Trivy vulnerability scanner
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          image-ref: mogambo-catalogue:${{ steps.get-sha.outputs.commit_sha }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.aws-region }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ env.aws-region }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_REGISTRY_URL }}
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-catalogue:${{ steps.get-sha.outputs.commit_sha }}
