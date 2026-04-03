@@ -1,0 +1,166 @@
+name: Carts CI Pipeline
+
+run-name: Carts CI - ${{ github.event_name }}
+
+on:
+  push:
+    branches:
+      - 'dev'
+
+  pull_request:
+    branches:
+      - 'dev'
+      - 'main'
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  aws-region: us-east-1
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      carts: ${{ steps.detect.outputs.carts }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect changes in carts
+        id: detect
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            carts:
+              - 'src/carts/**'
+
+      - name: Show change detection result
+        run: |
+          echo "Changes detected: ${{ steps.detect.outputs.carts }}"
+
+  build-and-test:
+    needs: [detect-changes]
+    runs-on: ubuntu-latest
+    if: needs.detect-changes.outputs.carts == 'true'
+    timeout-minutes: 20
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '18'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-carts-${{ hashFiles('src/carts/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-carts-
+
+      - name: Download dependencies
+        working-directory: src/carts
+        run: mvn -B -ntp dependency:go-offline
+      
+      - name: OWASP Dependency Check
+        continue-on-error: true
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'carts'
+          path: 'src/carts'
+          format: 'HTML'
+          args: >
+            --failOnCVSS 7
+            --disableYarnAudit
+      
+      - name: Run verify
+        working-directory: src/carts
+        run: mvn -B -ntp clean verify
+
+      - name: Generate JaCoCo report
+        working-directory: src/carts
+        run: mvn -B -ntp jacoco:report
+
+      - name: SonarQube Scan
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          projectBaseDir: src/carts
+          args: >
+            -Dsonar.projectKey=carts
+            -Dsonar.projectName=Carts
+            -Dsonar.sources=src/main/java
+            -Dsonar.tests=src/test/java
+            -Dsonar.java.binaries=target/classes
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+        env:
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
+
+      - name: SonarQube Quality Gate Check
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        with:
+          scanMetadataReportFile: src/carts/.scannerwork/report-task.txt
+        env:
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
+  
+  docker:
+    needs: [detect-changes, build-and-test]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      needs.detect-changes.outputs.carts == 'true' &&
+      needs.build-and-test.result == 'success'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Get Commit SHA
+        id: get-sha
+        run: echo "commit_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: |
+          docker build -t mogambo-carts:${{ steps.get-sha.outputs.commit_sha }} src/carts
+
+      - name: Tag Docker image for ECR
+        run: |
+          docker tag mogambo-carts:${{ steps.get-sha.outputs.commit_sha }} ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-carts:${{ steps.get-sha.outputs.commit_sha }}
+
+      - name: Run Trivy vulnerability scanner
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          image-ref: mogambo-carts:${{ steps.get-sha.outputs.commit_sha }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.aws-region }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ env.aws-region }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_REGISTRY_URL }}
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-carts:${{ steps.get-sha.outputs.commit_sha }}
