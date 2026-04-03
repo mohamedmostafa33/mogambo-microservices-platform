@@ -134,6 +134,18 @@ module.exports = {
 };
 
 ```
+
+For environments where carts does not listen on port 80, you can override carts routing without code changes:
+
+```
+export CARTS_PORT=8080
+```
+
+or provide a full base URL:
+
+```
+export CARTS_BASE_URL=http://carts:8080
+```
 ===========================
 
 # Build
