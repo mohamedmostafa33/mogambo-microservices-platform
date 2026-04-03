@@ -19,7 +19,6 @@ RUN mvn -B -ntp -DskipTests clean package
 FROM eclipse-temurin:21-jre AS runtime
 
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends libcap2-bin \
 	&& rm -rf /var/lib/apt/lists/* \
 	&& groupadd --system --gid 10001 carts \
 	&& useradd --system --uid 10001 --gid carts --create-home --home-dir /home/carts carts
@@ -28,14 +27,12 @@ WORKDIR /opt/carts
 
 COPY --from=build /opt/carts/target/carts.jar ./carts.jar
 
-RUN chown -R carts:carts /opt/carts \
-	&& JAVA_BIN="$(readlink -f \"$(which java)\")" \
-	&& setcap 'cap_net_bind_service=+ep' "$JAVA_BIN"
+RUN chown -R carts:carts /opt/carts
 
 USER carts
 
-EXPOSE 80
+EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "/opt/carts/carts.jar"]
-CMD ["--port=80"]
+CMD ["--port=8080"]
 
