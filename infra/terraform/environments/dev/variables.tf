@@ -104,7 +104,7 @@ variable "catalogue_repository_name" {
 variable "cart_repository_name" {
   description = "The name of the cart ECR repository"
   type        = string
-  default     = "mogambo-cart"
+  default     = "mogambo-carts"
 }
 
 variable "bucket_name" {
