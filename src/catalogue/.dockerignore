@@ -5,6 +5,8 @@ docker-compose*.yml
 scripts
 test
 vendor
+!vendor/
+!vendor/manifest
 data
 docker/catalogue-db
 *.md
