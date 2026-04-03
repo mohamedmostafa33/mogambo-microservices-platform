@@ -3,6 +3,14 @@ name: Catalogue CI Pipeline
 run-name: Catalogue CI - ${{ github.event_name }}
 
 on:
+  workflow_dispatch:
+    inputs:
+      force_build:
+        description: 'Force rebuild Docker image without cache'
+        required: false
+        default: false
+        type: boolean
+
   push:
     branches:
       - 'dev'
@@ -44,7 +52,9 @@ jobs:
   build-and-test:
     needs: [detect-changes]
     runs-on: ubuntu-latest
-    if: needs.detect-changes.outputs.catalogue == 'true'
+    if: |
+      needs.detect-changes.outputs.catalogue == 'true' ||
+      github.event_name == 'workflow_dispatch'
     timeout-minutes: 20
     env:
       GO_VERSION: '1.16'
@@ -160,9 +170,8 @@ jobs:
     needs: [detect-changes, build-and-test]
     runs-on: ubuntu-latest
     if: |
-      github.event_name == 'push' &&
-      needs.detect-changes.outputs.catalogue == 'true' &&
-      needs.build-and-test.result == 'success'
+      (github.event_name == 'push' && needs.detect-changes.outputs.catalogue == 'true' && needs.build-and-test.result == 'success') ||
+      (github.event_name == 'workflow_dispatch' && needs.build-and-test.result == 'success')
 
     steps:
       - name: Checkout Repository
@@ -174,7 +183,12 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t mogambo-catalogue:${{ steps.get-sha.outputs.commit_sha }} src/catalogue
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_build }}" = "true" ]; then
+            echo "Running forced Docker rebuild without cache"
+            docker build --no-cache -t mogambo-catalogue:${{ steps.get-sha.outputs.commit_sha }} src/catalogue
+          else
+            docker build -t mogambo-catalogue:${{ steps.get-sha.outputs.commit_sha }} src/catalogue
+          fi
 
       - name: Tag Docker image for ECR
         run: |
