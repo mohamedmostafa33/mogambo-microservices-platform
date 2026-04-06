@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalogue
+  namespace: mogambo
+  labels:
+    app: catalogue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalogue
+  template:
+    metadata:
+      labels:
+        app: catalogue
+    spec:
+      containers:
+        - name: catalogue
+          image: <AWS_ECR_REGISTRY_URL>/mogambo-catalogue:<COMMIT_SHA>
+          args:
+            - "-port=80"
+            - "-images=/images/"
+            - "-DSN=$(CATALOGUE_DB_DSN)"
+          ports:
+            - containerPort: 80
+          env:
+            - name: CATALOGUE_DB_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: catalogue-db-connection-secret
+                  key: CATALOGUE_DB_DSN
+          resources:
+            requests:
+              memory: "256Mi"      
+              cpu: "100m"        
+            limits:
+              memory: "512Mi"      
+              cpu: "300m" 
+          livenessProbe:
+              httpGet:
+                path: /health
+                port: 80
+              initialDelaySeconds: 20
+              periodSeconds: 10
+              timeoutSeconds: 2
+              failureThreshold: 3
+          readinessProbe:
+              httpGet:
+                path: /health
+                port: 80
+              initialDelaySeconds: 5
+              periodSeconds: 5
+              timeoutSeconds: 2
+              failureThreshold: 3
