@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: catalogue-db-init
+  namespace: mogambo
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: init-db
+          image: mysql:8.4
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              DB_NO_SCHEME="${DATABASE_URL#mysql://}"
+              DB_CREDS_HOST="${DB_NO_SCHEME%%/*}"
+              DB_NAME="${DB_NO_SCHEME#*/}"
+              DB_NAME="${DB_NAME%%\?*}"
+              DB_USERPASS="${DB_CREDS_HOST%%@*}"
+              DB_HOSTPORT="${DB_CREDS_HOST#*@}"
+              DB_USER="${DB_USERPASS%%:*}"
+              DB_PASS="${DB_USERPASS#*:}"
+              DB_HOST="${DB_HOSTPORT%%:*}"
+              DB_PORT="${DB_HOSTPORT#*:}"
+
+              if [ "${DB_HOST}" = "${DB_HOSTPORT}" ]; then
+                DB_PORT="3306"
+              fi
+
+              echo "Waiting for MySQL at ${DB_HOST}:${DB_PORT}..."
+              until mysqladmin ping -h "${DB_HOST}" -P "${DB_PORT}" -u "${DB_USER}" -p"${DB_PASS}" --silent; do
+                sleep 2
+              done
+
+              echo "Applying SQL dump to database ${DB_NAME}..."
+              mysql -h "${DB_HOST}" -P "${DB_PORT}" -u "${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" < /init/dump.sql
+
+              echo "Database migration completed successfully."
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: catalogue-db-migrate-secret
+                  key: DATABASE_URL
+          volumeMounts:
+            - name: dump-sql
+              mountPath: /init/dump.sql
+              subPath: dump.sql
+      volumes:
+        - name: dump-sql
+          configMap:
+            name: catalogue-db-init
+          

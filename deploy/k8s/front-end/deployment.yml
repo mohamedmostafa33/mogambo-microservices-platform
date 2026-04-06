@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: front-end
+  namespace: mogambo
+  labels:
+    app: front-end
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: front-end
+  template:
+    metadata:
+      labels:
+        app: front-end
+    spec:
+      containers:
+        - name: front-end
+          image: <AWS_ECR_REGISTRY_URL>/mogambo-front-end:<COMMIT_SHA>
+          ports:
+            - containerPort: 8079
+          envFrom:
+            - configMapRef:
+                name: front-end-config
+          resources:
+            requests:
+              memory: "256Mi"      
+              cpu: "100m"        
+            limits:
+              memory: "512Mi"      
+              cpu: "300m" 
+          livenessProbe:
+              httpGet:
+                path: /healthz
+                port: 8079
+              initialDelaySeconds: 20
+              periodSeconds: 10
+              timeoutSeconds: 2
+              failureThreshold: 3
+          readinessProbe:
+              httpGet:
+                path: /healthz
+                port: 8079
+              initialDelaySeconds: 5
+              periodSeconds: 5
+              timeoutSeconds: 2
+              failureThreshold: 3
