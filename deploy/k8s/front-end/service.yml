@@ -4,7 +4,7 @@ metadata:
   name: front-end
   namespace: mogambo
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: front-end
   ports:
