@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.ConfigMap.name }}
+  namespace: {{ .Values.namespace }}
+data:
+  CARTS_BASE_URL: {{.Values.ConfigMap.data.CARTS_BASE_URL | quote }}

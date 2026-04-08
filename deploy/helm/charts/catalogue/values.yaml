@@ -1,0 +1,65 @@
+# Values for catalogue Helm Chart.
+
+# Namespace Configuration
+namespace: mogambo
+
+# The count of replicas to deploy. This is ignored if autoscaling is enabled.
+replicaCount: 1
+
+# Args to pass to the container.
+args:
+  - "-port=80"
+  - "-images=/images/"
+  - "-DSN=$(CATALOGUE_DB_DSN)"
+
+# This sets the container image. 
+image:
+  # This sets the image repository.
+  repository: 231498620802.dkr.ecr.us-east-1.amazonaws.com/mogambo-catalogue
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Image tag.
+  tag: 19b39a8
+
+# This is for setting up a service.
+service:
+  # This sets the service type.
+  type: ClusterIP
+  # This sets the ports.
+  port: 80
+  # This sets the target port for the service.
+  targetPort: 80
+
+env:
+  name: CATALOGUE_DB_DSN
+  valueFrom:
+    secretKeyRef:
+      name: catalogue-db-connection-secret 
+      key: CATALOGUE_DB_DSN
+
+# This is for setting up the resources for a container.
+resources:
+  requests:
+    memory: "256Mi"      
+    cpu: "100m"        
+  limits:
+    memory: "512Mi"      
+    cpu: "300m" 
+
+# This is to setup the liveness and readiness probes.
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 80
+  initialDelaySeconds: 20
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 3
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 80
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 3
