@@ -12,7 +12,7 @@ containerPort: 8079
 # This sets the container image. 
 image:
   # This sets the image repository.
-  repository: 231498620802.dkr.ecr.us-east-1.amazonaws.com/mogambo-front-end
+  repository: 231498620802.dkr.ecr.us-east-1.amazonaws.com/mogambo-frontend
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Image tag.
