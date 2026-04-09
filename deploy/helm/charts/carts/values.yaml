@@ -1,0 +1,56 @@
+# Values for carts Helm Chart.
+
+# Namespace Configuration
+namespace: mogambo
+
+# The count of replicas to deploy. This is ignored if autoscaling is enabled.
+replicaCount: 1
+
+# This sets the container image. 
+image:
+  # This sets the image repository.
+  repository: 231498620802.dkr.ecr.us-east-1.amazonaws.com/mogambo-carts
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Image tag.
+  tag: 19b39a8
+
+# This is for setting up a service.
+service:
+  # This sets the service type.
+  type: ClusterIP
+  # This sets the ports.
+  port: 80
+  # This sets the target port for the service.
+  targetPort: 80
+
+env:
+  - name: db
+    value: "carts-db"
+
+# This is for setting up the resources for a container.
+resources:
+  requests:
+    cpu: "200m"
+    memory: "384Mi"
+  limits:
+    cpu: "700m"
+    memory: "768Mi"
+
+# This is to setup the liveness and readiness probes.
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 80
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 80
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 6

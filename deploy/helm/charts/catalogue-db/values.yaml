@@ -1,0 +1,81 @@
+# Values for catalogue-db Helm Chart.
+
+# Namespace Configuration
+namespace: mogambo
+fullnameOverride: catalogue-db-init
+
+# annotations for the job to initialize the database
+annotations:
+  "helm.sh/hook": post-install,post-upgrade
+  "helm.sh/hook-weight": "0"
+  "helm.sh/hook-delete-policy": hook-succeeded
+
+# Controls how many times the Job will retry before marking it as failed.
+backoffLimit: 4
+
+# policy for restarting the job to initialize the database
+restartPolicy: OnFailure
+
+# This sets the container image. 
+image:
+  # This sets the image repository.
+  repository: mysql
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Image tag.
+  tag: 8.4
+
+# Executes the container using a shell to run multi-line scripts.
+command: ["/bin/sh", "-c"]
+
+# Script executed inside the container to initialize the database.
+args:
+  - |
+    set -e
+    DB_NO_SCHEME="${DATABASE_URL#mysql://}"
+    DB_CREDS_HOST="${DB_NO_SCHEME%%/*}"
+    DB_NAME="${DB_NO_SCHEME#*/}"
+    DB_NAME="${DB_NAME%%\?*}"
+    DB_USERPASS="${DB_CREDS_HOST%%@*}"
+    DB_HOSTPORT="${DB_CREDS_HOST#*@}"
+    DB_USER="${DB_USERPASS%%:*}"
+    DB_PASS="${DB_USERPASS#*:}"
+    DB_HOST="${DB_HOSTPORT%%:*}"
+    DB_PORT="${DB_HOSTPORT#*:}"
+
+    if [ "${DB_HOST}" = "${DB_HOSTPORT}" ]; then
+      DB_PORT="3306"
+    fi
+
+    echo "Waiting for MySQL at ${DB_HOST}:${DB_PORT}..."
+    until mysqladmin ping -h "${DB_HOST}" -P "${DB_PORT}" -u "${DB_USER}" -p"${DB_PASS}" --silent; do
+      sleep 2
+    done
+
+    echo "Applying SQL dump to database ${DB_NAME}..."
+    mysql -h "${DB_HOST}" -P "${DB_PORT}" -u "${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" < /init/dump.sql
+
+    echo "Database migration completed successfully."
+
+# Environment variable used to connect and parse database credentials.
+env:
+  - name: DATABASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: catalogue-db-migrate-secret
+        key: DATABASE_URL
+
+volumeMounts:
+  # Mounts the ConfigMap volume into the container.
+  - name: dump-sql
+    # File path where the SQL dump will be mounted inside the container.
+    mountPath: /init/dump.sql
+    # Directory where the SQL dump file will be available inside the container.
+    subPath: dump.sql
+
+volumes:
+  - name: dump-sql
+    # Defines the volume that provides the SQL dump file to the container.
+    configMap:
+      name: catalogue-db-init
+      # ConfigMap that contains the database initialization SQL script.
