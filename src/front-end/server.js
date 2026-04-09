@@ -18,6 +18,11 @@ var express      = require("express")
 app.use(helpers.rewriteSlash);
 app.use(metrics);
 app.use(express.static("public"));
+
+app.get("/healthz", function(req, res) {
+  res.status(200).send("ok");
+});
+
 if(process.env.SESSION_REDIS) {
     console.log('Using the redis based session manager');
     app.use(session(config.session_redis));
