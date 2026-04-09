@@ -2,6 +2,7 @@
 
 # Namespace Configuration
 namespace: mogambo
+fullnameOverride: carts
 
 # The count of replicas to deploy. This is ignored if autoscaling is enabled.
 replicaCount: 1
