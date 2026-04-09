@@ -2,6 +2,7 @@
 
 # Namespace Configuration
 namespace: mogambo
+fullnameOverride: front-end
 
 # The count of replicas to deploy. This is ignored if autoscaling is enabled.
 replicaCount: 1
@@ -55,7 +56,7 @@ ingress:
               service:
                 name: carts
                 port:
-                  number: 80
+                    number: 8080
           - path: /
             pathType: Prefix
             backend:

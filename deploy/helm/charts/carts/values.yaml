@@ -2,6 +2,7 @@
 
 # Namespace Configuration
 namespace: mogambo
+fullnameOverride: carts
 
 # The count of replicas to deploy. This is ignored if autoscaling is enabled.
 replicaCount: 1
@@ -20,9 +21,12 @@ service:
   # This sets the service type.
   type: ClusterIP
   # This sets the ports.
-  port: 80
+  port: 8080
   # This sets the target port for the service.
-  targetPort: 80
+  targetPort: 8080
+
+# This is for setting up the container port.
+containerPort: 8080
 
 env:
   - name: db
@@ -41,7 +45,7 @@ resources:
 readinessProbe:
   httpGet:
     path: /health
-    port: 80
+    port: 8080
   initialDelaySeconds: 10
   periodSeconds: 5
   timeoutSeconds: 2
@@ -49,7 +53,7 @@ readinessProbe:
 livenessProbe:
   httpGet:
     path: /health
-    port: 80
+    port: 8080
   initialDelaySeconds: 30
   periodSeconds: 10
   timeoutSeconds: 3
