@@ -1,0 +1,69 @@
+# Values for carts-db Helm Chart.
+
+# Namespace Configuration
+namespace: mogambo
+
+# The count of replicas to deploy. This is ignored if autoscaling is enabled.
+replicaCount: 1
+
+# This sets the container image. 
+image:
+  # This sets the image repository.
+  repository: mongo
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Image tag.
+  tag: 4.4
+
+# This is for setting up a service.
+service:
+  # This sets the service type.
+  type: ClusterIP
+  # This sets the ports.
+  port: 27017
+  # This sets the target port for the service.
+  targetPort: 27017
+
+# This is for setting up the container port.
+containerPort: 27017
+
+# This is for setting up the resources for a container.
+resources:
+  requests:
+    cpu: "200m"
+    memory: "512Mi"
+  limits:
+    cpu: "600m"
+    memory: "1Gi"
+
+# This is to setup the liveness and readiness probes.
+readinessProbe:
+  tcpSocket:
+    port: 27017
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 6
+livenessProbe:
+  tcpSocket:
+    port: 27017
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 6
+
+# This is for setting up volume mounts.
+volumeMounts:
+  - name: carts-db-data
+    mountPath: /data/db
+
+# Persistent volume claims for StatefulSet data.
+volumeClaimTemplates:
+  - metadata:
+      name: carts-db-data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
