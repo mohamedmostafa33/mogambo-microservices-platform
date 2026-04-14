@@ -22,9 +22,12 @@
   var cartsPortSuffix = process.env.CARTS_PORT ? util.format(":%s", process.env.CARTS_PORT) : "";
   var cartsBaseUrl = process.env.CARTS_BASE_URL || util.format("http://%s%s", defaultCartsHost, cartsPortSuffix);
   cartsBaseUrl = normalizeBaseUrl(cartsBaseUrl);
+  var catalogueImagesBaseUrl = process.env.CATALOGUE_IMAGES_BASE_URL || util.format("http://catalogue%s", domain);
+  catalogueImagesBaseUrl = normalizeBaseUrl(catalogueImagesBaseUrl);
 
   module.exports = {
     catalogueUrl:  util.format("http://catalogue%s", domain),
+    catalogueImagesBaseUrl: catalogueImagesBaseUrl,
     tagsUrl:       util.format("http://catalogue%s/tags", domain),
     cartsUrl:      util.format("%s/carts", cartsBaseUrl),
     ordersUrl:     util.format("http://orders%s", domain),
