@@ -5,6 +5,7 @@ module "vpc" {
   public_subnet_cidr_block_2  = var.public_subnet_cidr_block_2
   private_subnet_cidr_block_1 = var.private_subnet_cidr_block_1
   private_subnet_cidr_block_2 = var.private_subnet_cidr_block_2
+  cluster_name                = var.cluster_name
 }
 
 module "sg" {

@@ -19,7 +19,9 @@ resource "aws_subnet" "mogambo_public_subnet_1" {
   availability_zone       = data.aws_availability_zones.available.names[0]
 
   tags = {
-    Name = "mogambo-public-subnet_1"
+    Name                                      = "mogambo-public-subnet_1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                   = "1"
   }
 }
 
@@ -30,7 +32,9 @@ resource "aws_subnet" "mogambo_public_subnet_2" {
   availability_zone       = data.aws_availability_zones.available.names[1]
 
   tags = {
-    Name = "mogambo-public-subnet_2"
+    Name                                      = "mogambo-public-subnet_2"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                   = "1"
   }
 }
 
@@ -41,7 +45,9 @@ resource "aws_subnet" "mogambo_private_subnet_1" {
   availability_zone       = data.aws_availability_zones.available.names[0]
 
   tags = {
-    Name = "mogambo-private-subnet_1"
+    Name                                      = "mogambo-private-subnet_1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"          = "1"
   }
 }
 
@@ -52,7 +58,9 @@ resource "aws_subnet" "mogambo_private_subnet_2" {
   availability_zone       = data.aws_availability_zones.available.names[1]
 
   tags = {
-    Name = "mogambo-private-subnet_2"
+    Name                                      = "mogambo-private-subnet_2"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"          = "1"
   }
 }
 

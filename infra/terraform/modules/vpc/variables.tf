@@ -22,3 +22,8 @@ variable "private_subnet_cidr_block_2" {
   description = "CIDR block for the private subnet 2"
   type        = string
 }
+
+variable "cluster_name" {
+  description = "EKS cluster name used for Kubernetes subnet discovery tags"
+  type        = string
+}
