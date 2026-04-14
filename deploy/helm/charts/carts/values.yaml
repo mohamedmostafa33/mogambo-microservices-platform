@@ -14,7 +14,7 @@ image:
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Image tag.
-  tag: b0f9e23
+  tag: c46788a
 
 # This is for setting up a service.
 service:
