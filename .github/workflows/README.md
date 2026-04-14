@@ -13,9 +13,9 @@ The workflows are designed around four principles:
 
 | Workflow File | Name | Trigger | Primary Responsibility |
 |---|---|---|---|
-| `carts-ci.yml` | Carts CI Pipeline | Push to `dev`, PR to `dev`/`main` | Build/test carts service, scan, build image, push to ECR |
-| `catalogue-ci.yml` | Catalogue CI Pipeline | Push to `dev`, PR to `dev`/`main` | Build/test catalogue service, scan, build image, push to ECR |
-| `frontend-ci.yml` | Front-end CI Pipeline | Push to `dev`, PR to `dev`/`main` | Build/test frontend service, scan, build image, push to ECR |
+| `carts-ci.yml` | Carts CI Pipeline | Push to `dev`, PR to `dev`/`main` | Build/test carts service, scan, build image, push to ECR, and update Helm image tag |
+| `catalogue-ci.yml` | Catalogue CI Pipeline | Push to `dev`, PR to `dev`/`main` | Build/test catalogue service, scan, build image, push to ECR, and update Helm image tag |
+| `frontend-ci.yml` | Front-end CI Pipeline | Push to `dev`, PR to `dev`/`main` | Build/test frontend service, scan, build image, push to ECR, and update Helm image tag |
 | `infra.yml` | Infrastructure Deployment Pipeline | Manual (`workflow_dispatch`) | Terraform plan/apply/destroy/outputs for dev environment |
 
 ## Shared CI Design
@@ -35,6 +35,13 @@ Service CI workflows (`carts-ci.yml`, `catalogue-ci.yml`, `frontend-ci.yml`) fol
 - Runs only on `push` events.
 - Runs only when `detect-changes` is true and `build-and-test` succeeded.
 - Builds image, tags with short commit SHA, scans with Trivy, and pushes to ECR.
+- Exposes `commit_sha` as a job output for downstream jobs.
+
+4. `update-helm-values`
+- Runs only when the `docker` job succeeds.
+- Updates service Helm values image `tag` with the just-pushed image SHA tag.
+- Commits only when a real values change is detected (idempotent update).
+- Pushes the Helm values update commit to `dev` with `[skip ci]` to avoid workflow loops.
 
 ## Required Secrets
 
@@ -130,6 +137,7 @@ Use this workflow carefully. `apply` and `destroy` are state-changing operations
 ### Branch behavior
 - Service workflows validate on PRs and pushes.
 - Docker push stages run only on push events.
+- Helm values auto-update commits are pushed to `dev` after successful image publish.
 
 ### Security behavior
 - OIDC is used for AWS authentication (`id-token: write`).

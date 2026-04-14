@@ -21,7 +21,7 @@ on:
       - 'main'
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 env:
@@ -123,6 +123,8 @@ jobs:
   docker:
     needs: [detect-changes, build-and-test]
     runs-on: ubuntu-latest
+    outputs:
+      commit_sha: ${{ steps.get-sha.outputs.commit_sha }}
     if: |
       (github.event_name == 'push' && needs.detect-changes.outputs.frontend == 'true' && needs.build-and-test.result == 'success')
       || (github.event_name =='workflow_dispatch' && needs.build-and-test.result == 'success')
@@ -172,3 +174,36 @@ jobs:
       - name: Push Docker image
         run: |
           docker push ${{ secrets.AWS_ECR_REGISTRY_URL }}/mogambo-frontend:${{ steps.get-sha.outputs.commit_sha }}
+          
+  update-helm-values:
+    needs: [detect-changes, build-and-test, docker]
+    runs-on: ubuntu-latest
+    if: ${{ needs.docker.result == 'success' }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+      
+      - name: Update Helm values image tag
+        run: |
+          IMAGE_TAG="${{ needs.docker.outputs.commit_sha }}"
+          if [ -z "$IMAGE_TAG" ]; then
+            echo "Docker image tag output is empty."
+            exit 1
+          fi
+
+          sed -i -E "s|^([[:space:]]*tag:).*|\1 ${IMAGE_TAG}|" deploy/helm/charts/front-end/values.yaml
+          git add deploy/helm/charts/front-end/values.yaml
+
+          if git diff --cached --quiet; then
+            echo "Helm values already up to date."
+            exit 0
+          fi
+
+          git commit -m "chore(ci): update front-end helm image tag to ${IMAGE_TAG} [skip ci]"
+          git push origin HEAD:dev
