@@ -41,7 +41,7 @@ resource "aws_s3_bucket_cors_configuration" "mogambo_s3_bucket_cors" {
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "HEAD"]
-    allowed_origins = ["*"]
+    allowed_origins = var.s3_cors_allowed_origins
     max_age_seconds = 3600
   }
 }

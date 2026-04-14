@@ -10,7 +10,7 @@ output "vpc_cidr_block" {
 
 output "public_subnet_ids" {
   description = "IDs of the public subnets"
-  value       = [
+  value = [
     module.vpc.public_subnet_ids[0],
     module.vpc.public_subnet_ids[1]
   ]
@@ -18,7 +18,7 @@ output "public_subnet_ids" {
 
 output "public_subnet_cidrs" {
   description = "CIDR blocks of the public subnets"
-  value       = [
+  value = [
     module.vpc.public_subnet_cidrs[0],
     module.vpc.public_subnet_cidrs[1]
   ]
@@ -26,7 +26,7 @@ output "public_subnet_cidrs" {
 
 output "public_subnet_azs" {
   description = "Availability Zones of the public subnets"
-  value       = [
+  value = [
     module.vpc.public_subnet_azs[0],
     module.vpc.public_subnet_azs[1]
   ]
@@ -34,7 +34,7 @@ output "public_subnet_azs" {
 
 output "private_subnet_ids" {
   description = "IDs of the private subnets"
-  value       = [
+  value = [
     module.vpc.private_subnet_ids[0],
     module.vpc.private_subnet_ids[1]
   ]
@@ -42,7 +42,7 @@ output "private_subnet_ids" {
 
 output "private_subnet_cidrs" {
   description = "CIDR blocks of the private subnets"
-  value       = [
+  value = [
     module.vpc.private_subnet_cidrs[0],
     module.vpc.private_subnet_cidrs[1]
   ]
@@ -50,7 +50,7 @@ output "private_subnet_cidrs" {
 
 output "private_subnet_azs" {
   description = "Availability Zones of the private subnets"
-  value       = [
+  value = [
     module.vpc.private_subnet_azs[0],
     module.vpc.private_subnet_azs[1]
   ]
@@ -219,6 +219,11 @@ output "cloudfront_distribution_id" {
 output "cloudfront_distribution_arn" {
   description = "CloudFront distribution ARN"
   value       = module.s3.cloudfront_distribution_arn
+}
+
+output "cloudfront_catalogue_images_base_url" {
+  description = "Base URL for catalogue images served through CloudFront"
+  value       = module.s3.cloudfront_catalogue_images_base_url
 }
 
 output "eks_cluster_role_name" {

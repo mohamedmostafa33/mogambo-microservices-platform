@@ -32,3 +32,8 @@ output "cloudfront_distribution_arn" {
   description = "CloudFront distribution ARN"
   value       = aws_cloudfront_distribution.mogambo_distribution.arn
 }
+
+output "cloudfront_catalogue_images_base_url" {
+  description = "Base URL for catalogue images served through CloudFront"
+  value       = "https://${aws_cloudfront_distribution.mogambo_distribution.domain_name}/catalogue/images"
+}
