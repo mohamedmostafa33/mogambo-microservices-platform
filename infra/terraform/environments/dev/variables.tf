@@ -67,7 +67,7 @@ variable "db_max_allocated_storage" {
 variable "db_identifier" {
   description = "The identifier for the RDS instance"
   type        = string
-  default = "mogambo-catalogue-db-instance"
+  default     = "mogambo-catalogue-db-instance"
 }
 
 variable "db_name" {
@@ -125,10 +125,16 @@ variable "cloudfront_price_class" {
   default     = "PriceClass_100"
 }
 
+variable "s3_cors_allowed_origins" {
+  description = "Allowed origins for S3 CORS requests. Use frontend domain(s) in production."
+  type        = list(string)
+  default     = ["*"]
+}
+
 variable "eks_role_name" {
   description = "The name of the IAM role for the EKS cluster"
   type        = string
-  default = "mogambo-eks-cluster-role"
+  default     = "mogambo-eks-cluster-role"
 }
 
 variable "eks_node_group_role_name" {
@@ -168,7 +174,7 @@ variable "desired_node_count" {
 }
 
 variable "max_node_count" {
-  description = "The maximum number of nodes in the EKS node group" 
+  description = "The maximum number of nodes in the EKS node group"
   type        = number
   default     = 6
 }

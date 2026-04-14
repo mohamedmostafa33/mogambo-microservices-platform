@@ -13,13 +13,13 @@ module "sg" {
 }
 
 module "ec2" {
-  source                       = "../../modules/ec2"
-  sonarqube_ami_id             = var.sonarqube_ami_id
-  sonarqube_instance_type      = var.sonarqube_instance_type
-  sonarqube_subnet_id          = module.vpc.public_subnet_ids[0]
-  sonarqube_security_group_id  = module.sg.sonarqube_sg_id
-  sonarqube_key_name           = var.sonarqube_key_name
-  sonarqube_instance_name      = var.sonarqube_instance_name
+  source                      = "../../modules/ec2"
+  sonarqube_ami_id            = var.sonarqube_ami_id
+  sonarqube_instance_type     = var.sonarqube_instance_type
+  sonarqube_subnet_id         = module.vpc.public_subnet_ids[0]
+  sonarqube_security_group_id = module.sg.sonarqube_sg_id
+  sonarqube_key_name          = var.sonarqube_key_name
+  sonarqube_instance_name     = var.sonarqube_instance_name
 }
 
 module "rds" {
@@ -39,17 +39,18 @@ module "rds" {
 }
 
 module "ecr" {
-  source = "../../modules/ecr"
-  frontend_repository_name   = var.frontend_repository_name
-  catalogue_repository_name  = var.catalogue_repository_name
-  cart_repository_name       = var.cart_repository_name
+  source                    = "../../modules/ecr"
+  frontend_repository_name  = var.frontend_repository_name
+  catalogue_repository_name = var.catalogue_repository_name
+  cart_repository_name      = var.cart_repository_name
 }
 
 module "s3" {
-  source                 = "../../modules/s3"
-  bucket_name            = var.bucket_name
-  environment            = var.environment
-  cloudfront_price_class = var.cloudfront_price_class
+  source                  = "../../modules/s3"
+  bucket_name             = var.bucket_name
+  environment             = var.environment
+  cloudfront_price_class  = var.cloudfront_price_class
+  s3_cors_allowed_origins = var.s3_cors_allowed_origins
 }
 
 module "iam" {
