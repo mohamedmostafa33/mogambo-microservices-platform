@@ -24,6 +24,7 @@ ConfigMap:
   name: front-end-config
   data:
     CARTS_BASE_URL: http://carts:8080
+    CATALOGUE_IMAGES_BASE_URL: https://d3d1mcn975jivq.cloudfront.net
 
 # This is for setting up a service.
 service:
