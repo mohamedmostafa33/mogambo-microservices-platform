@@ -5,3 +5,4 @@ metadata:
   namespace: {{ .Values.namespace }}
 data:
   CARTS_BASE_URL: {{.Values.ConfigMap.data.CARTS_BASE_URL | quote }}
+  CATALOGUE_IMAGES_BASE_URL: {{.Values.ConfigMap.data.CATALOGUE_IMAGES_BASE_URL | quote }}
