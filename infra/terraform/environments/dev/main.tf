@@ -8,8 +8,9 @@ module "vpc" {
 }
 
 module "sg" {
-  source = "../../modules/sg"
-  vpc_id = module.vpc.vpc_id
+  source         = "../../modules/sg"
+  vpc_id         = module.vpc.vpc_id
+  vpc_cidr_block = module.vpc.vpc_cidr_block
 }
 
 module "ec2" {

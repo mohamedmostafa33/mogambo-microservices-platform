@@ -109,13 +109,13 @@ resource "aws_security_group_rule" "allow_all_egress_from_eks_nodes" {
 }
 
 resource "aws_security_group_rule" "allow_db_access_from_eks" {
-  description              = "Allow EKS node group to access RDS"
-  type                     = "ingress"
-  from_port                = 3306
-  to_port                  = 3306
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.mogambo_catalogue_db_sg.id
-  source_security_group_id = aws_security_group.mogambo_eks_node_group_sg.id
+  description       = "Allow EKS workloads in VPC to access RDS"
+  type              = "ingress"
+  from_port         = 3306
+  to_port           = 3306
+  protocol          = "tcp"
+  security_group_id = aws_security_group.mogambo_catalogue_db_sg.id
+  cidr_blocks       = [var.vpc_cidr_block]
 }
 
 resource "aws_security_group_rule" "allow_db_all_egress" {

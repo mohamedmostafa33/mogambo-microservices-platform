@@ -63,6 +63,7 @@ volumeClaimTemplates:
   - metadata:
       name: carts-db-data
     spec:
+      storageClassName: gp2
       accessModes:
         - ReadWriteOnce
       resources:
