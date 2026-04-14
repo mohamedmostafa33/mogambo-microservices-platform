@@ -206,4 +206,15 @@ jobs:
           fi
 
           git commit -m "chore(ci): update front-end helm image tag to ${IMAGE_TAG} [skip ci]"
-          git push origin HEAD:dev
+
+          for attempt in 1 2 3; do
+            echo "Rebase/push attempt ${attempt}"
+            git fetch origin dev
+            git rebase origin/dev
+            if git push origin HEAD:dev; then
+              exit 0
+            fi
+          done
+
+          echo "Failed to push Helm values update after retries."
+          exit 1
