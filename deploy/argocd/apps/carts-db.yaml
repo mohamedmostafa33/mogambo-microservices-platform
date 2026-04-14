@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: carts-db
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/mohamedmostafa33/mogambo-microservices-platform.git'
+    targetRevision: dev
+    path: deploy/helm/charts/carts-db
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mogambo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
