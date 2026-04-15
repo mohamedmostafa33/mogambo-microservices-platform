@@ -70,19 +70,19 @@ public class HTTPMonitoringInterceptor implements HandlerInterceptor {
     }
 
     private String getMatchingURLPattern(HttpServletRequest httpServletRequest) {
-        String res = "";
-        for (PatternsRequestCondition pattern : getUrlPatterns()) {
-            if (pattern == null || httpServletRequest.getServletPath().equals("/error")) {
-                continue;
-            }
+        if (httpServletRequest.getServletPath().equals("/error")) {
+            return "";
+        }
 
-            PatternsRequestCondition matched = pattern.getMatchingCondition(httpServletRequest);
-            if (matched != null && !matched.getPatterns().isEmpty()) {
-                res = matched.getPatterns().iterator().next();
-                break;
+        for (PatternsRequestCondition pattern : getUrlPatterns()) {
+            if (pattern != null) {
+                PatternsRequestCondition matched = pattern.getMatchingCondition(httpServletRequest);
+                if (matched != null && !matched.getPatterns().isEmpty()) {
+                    return matched.getPatterns().iterator().next();
+                }
             }
         }
-        return res;
+        return "";
     }
 
     private Set<PatternsRequestCondition> getUrlPatterns() {

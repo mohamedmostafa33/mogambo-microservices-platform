@@ -70,6 +70,11 @@ public class Item {
         return itemId != null ? itemId.equals(item.itemId) : item.itemId == null;
     }
 
+    @Override
+    public int hashCode() {
+        return itemId != null ? itemId.hashCode() : 0;
+    }
+
     // ****** Crappy getter/setters for Jackson JSON invoking ********
 
     public String getId() {

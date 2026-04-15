@@ -24,8 +24,8 @@ public class HealthCheckController {
     public
     @ResponseBody
     Map<String, List<HealthCheck>> getHealth() {
-       Map<String, List<HealthCheck>> map = new HashMap<String, List<HealthCheck>>();
-       List<HealthCheck> healthChecks = new ArrayList<HealthCheck>();
+       Map<String, List<HealthCheck>> map = new HashMap<>();
+       List<HealthCheck> healthChecks = new ArrayList<>();
        Date dateNow = Calendar.getInstance().getTime();
 
        HealthCheck app = new HealthCheck("carts", "OK", dateNow);
