@@ -64,6 +64,30 @@ bool_true() {
 	esac
 }
 
+ensure_catalogue_dsn_compat() {
+	local dsn="$1"
+	local base query
+
+	if [[ "$dsn" == *\?* ]]; then
+		base="${dsn%%\?*}"
+		query="${dsn#*\?}"
+	else
+		base="$dsn"
+		query=""
+	fi
+
+	if [[ "$query" == *"allowNativePasswords="* ]]; then
+		echo "$dsn"
+		return 0
+	fi
+
+	if [[ -n "$query" ]]; then
+		echo "${base}?${query}&allowNativePasswords=true"
+	else
+		echo "${base}?allowNativePasswords=true"
+	fi
+}
+
 require_cmd() {
 	if ! command -v "$1" >/dev/null 2>&1; then
 		err "Missing required command: $1"
@@ -389,6 +413,8 @@ if [[ -z "${CATALOGUE_DB_DSN:-}" || -z "${DATABASE_URL:-}" ]]; then
 	err "Missing required secrets. Ensure CATALOGUE_DB_DSN and DATABASE_URL are set in .env"
 	exit 1
 fi
+
+CATALOGUE_DB_DSN="$(ensure_catalogue_dsn_compat "$CATALOGUE_DB_DSN")"
 
 validate_secret_formats
 
