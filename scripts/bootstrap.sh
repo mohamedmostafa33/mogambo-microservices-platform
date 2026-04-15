@@ -253,7 +253,8 @@ ensure_alb_controller_extra_permissions() {
 			"Effect": "Allow",
 			"Action": [
 				"elasticloadbalancing:DescribeListenerAttributes",
-				"elasticloadbalancing:ModifyListenerAttributes"
+																"elasticloadbalancing:ModifyListenerAttributes",
+																"elasticloadbalancing:SetRulePriorities"
       ],
       "Resource": "*"
     }
