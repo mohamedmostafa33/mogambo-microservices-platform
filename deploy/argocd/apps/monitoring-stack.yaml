@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-stack
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 61.9.0
+    helm:
+      releaseName: monitoring
+      values: |
+        alertmanager:
+          enabled: true
+        grafana:
+          enabled: true
+          service:
+            type: ClusterIP
+        prometheus:
+          service:
+            type: ClusterIP
+          prometheusSpec:
+            serviceMonitorSelectorNilUsesHelmValues: false
+            serviceMonitorNamespaceSelector: {}
+        kube-state-metrics:
+          enabled: true
+        prometheus-node-exporter:
+          enabled: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

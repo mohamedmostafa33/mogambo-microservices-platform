@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: catalogue-metrics
+  namespace: mogambo
+  labels:
+    app.kubernetes.io/part-of: mogambo
+spec:
+  namespaceSelector:
+    matchNames:
+      - mogambo
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: catalogue
+      app.kubernetes.io/name: catalogue
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
