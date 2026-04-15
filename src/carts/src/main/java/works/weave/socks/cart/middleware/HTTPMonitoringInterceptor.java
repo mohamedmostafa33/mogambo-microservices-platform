@@ -72,10 +72,13 @@ public class HTTPMonitoringInterceptor implements HandlerInterceptor {
     private String getMatchingURLPattern(HttpServletRequest httpServletRequest) {
         String res = "";
         for (PatternsRequestCondition pattern : getUrlPatterns()) {
-            if (pattern.getMatchingCondition(httpServletRequest) != null &&
-                    !httpServletRequest.getServletPath().equals("/error")) {
-                res = pattern.getMatchingCondition(httpServletRequest).getPatterns().iterator()
-                        .next();
+            if (pattern == null || httpServletRequest.getServletPath().equals("/error")) {
+                continue;
+            }
+
+            PatternsRequestCondition matched = pattern.getMatchingCondition(httpServletRequest);
+            if (matched != null && !matched.getPatterns().isEmpty()) {
+                res = matched.getPatterns().iterator().next();
                 break;
             }
         }

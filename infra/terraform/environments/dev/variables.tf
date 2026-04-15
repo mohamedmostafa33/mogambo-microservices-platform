@@ -86,7 +86,7 @@ variable "db_password" {
   description = "The master password for the RDS instance"
   type        = string
   sensitive   = true
-  default     = "Mogambo#2026!"
+  default     = "Mogambo2026!"
 }
 
 variable "frontend_repository_name" {

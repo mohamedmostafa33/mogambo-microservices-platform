@@ -87,15 +87,19 @@ func (s *catalogueService) List(tags []string, order string, pageNum, pageSize i
 	query += " GROUP BY id"
 
 	if order != "" {
-		query += " ORDER BY ?"
-		args = append(args, order)
+		switch order {
+		case "id", "name", "price", "count":
+			query += " ORDER BY " + order
+		default:
+			query += " ORDER BY id"
+		}
 	}
 
 	query += ";"
 
 	err := s.db.Select(&socks, query, args...)
 	if err != nil {
-		s.logger.Log("database error", err)
+		s.logger.Log("db_err", err)
 		return []Sock{}, ErrDBConnection
 	}
 	for i, s := range socks {
@@ -131,7 +135,7 @@ func (s *catalogueService) Count(tags []string) (int, error) {
 	sel, err := s.db.Prepare(query)
 
 	if err != nil {
-		s.logger.Log("database error", err)
+		s.logger.Log("db_err", err)
 		return 0, ErrDBConnection
 	}
 	defer sel.Close()
@@ -140,7 +144,7 @@ func (s *catalogueService) Count(tags []string) (int, error) {
 	err = sel.QueryRow(args...).Scan(&count)
 
 	if err != nil {
-		s.logger.Log("database error", err)
+		s.logger.Log("db_err", err)
 		return 0, ErrDBConnection
 	}
 
@@ -153,7 +157,7 @@ func (s *catalogueService) Get(id string) (Sock, error) {
 	var sock Sock
 	err := s.db.Get(&sock, query, id)
 	if err != nil {
-		s.logger.Log("database error", err)
+		s.logger.Log("db_err", err)
 		return Sock{}, ErrNotFound
 	}
 
@@ -186,14 +190,14 @@ func (s *catalogueService) Tags() ([]string, error) {
 	query := "SELECT name FROM tag;"
 	rows, err := s.db.Query(query)
 	if err != nil {
-		s.logger.Log("database error", err)
+		s.logger.Log("db_err", err)
 		return []string{}, ErrDBConnection
 	}
 	var tag string
 	for rows.Next() {
 		err = rows.Scan(&tag)
 		if err != nil {
-			s.logger.Log("database error", err)
+			s.logger.Log("db_err", err)
 			continue
 		}
 		tags = append(tags, tag)
