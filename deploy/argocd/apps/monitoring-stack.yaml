@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: monitoring-stack
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
   source:
@@ -12,6 +14,8 @@ spec:
     helm:
       releaseName: monitoring
       values: |
+        crds:
+          enabled: false
         alertmanager:
           enabled: true
         grafana:
@@ -37,3 +41,4 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true

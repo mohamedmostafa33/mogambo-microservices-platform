@@ -4,6 +4,7 @@ This repository now includes GitOps manifests to deploy Prometheus and Grafana u
 
 ## Added Components
 
+- ArgoCD app `monitoring-crds` to install Prometheus Operator CRDs first
 - ArgoCD app `monitoring-stack` to install kube-prometheus-stack in namespace `monitoring`
 - ArgoCD app `monitoring-targets` to deploy application scrape targets from `deploy/k8s/monitoring`
 - ServiceMonitor for `catalogue` metrics at `/metrics`
