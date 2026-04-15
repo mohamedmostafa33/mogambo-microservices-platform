@@ -11,6 +11,13 @@ spec:
   rules:
     - http:
         paths:
+          - path: /catalogue/images
+            pathType: Prefix
+            backend:
+              service:
+                name: front-end
+                port:
+                  number: 80
           - path: /catalogue
             pathType: Prefix
             backend:
