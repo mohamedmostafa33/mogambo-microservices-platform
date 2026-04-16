@@ -54,15 +54,15 @@ Static/media delivery
 
 ## 4) Repository Map (Audited)
 
-Total tracked files (excluding .git): 410
+Total tracked files (excluding .git): 408
 
 Top-level distribution:
 
 - .github: 5
 - ansible: 11
 - deploy: 57
-- docs: 1
-- infra: 39
+- docs: 4
+- infra: 34
 - scripts: 3
 - src: 292
 
@@ -144,6 +144,12 @@ Note:
       - enforces ALB IAM extras (including SetRulePriorities)
       - applies root Argo app and waits for apps
       - normalizes catalogue DSN with allowNativePasswords=true
+- cleanup.sh: safe pre-destroy cleanup workflow before terraform destroy
+      - supports dry-run preview mode
+      - supports force mode via --force and -y
+      - removes ArgoCD applications and Helm releases
+      - deletes load balancers, ALB IAM role/policies, and optional OIDC provider
+      - removes application namespaces with timeout/finalizer handling
 - install-sonarqube-al2023.sh: standalone SonarQube installer for AL2023 EC2
 - .env: runtime secret source for bootstrap
 
@@ -232,7 +238,12 @@ Current service readiness for scraping:
 - front-end: /metrics returns 500 and needs app fix
 - carts: no active metrics endpoint exposed
 
-See docs/monitoring.md for next hardening steps.
+Additional operations docs:
+
+- docs/monitoring.md
+- docs/bootstrap-guide.md
+- docs/cleanup-guide.md
+- docs/bootstrap-vs-cleanup.md
 
 ## 8) CI/CD and Release Flow
 
@@ -269,6 +280,21 @@ cd scripts
 kubectl -n argocd get applications
 kubectl -n mogambo get pods,svc,ingress
 kubectl -n monitoring get pods
+```
+
+### 9.4 Pre-destroy cleanup (recommended)
+
+```bash
+cd scripts
+./cleanup.sh --dry-run
+./cleanup.sh -y --skip-oidc
+```
+
+### 9.5 Destroy infra (dev)
+
+```bash
+cd infra/terraform/environments/dev
+terraform destroy
 ```
 
 ## 10) Local Development Workflow
@@ -319,14 +345,15 @@ Local ports:
 - environment defaults: infra/terraform/environments/dev
 - image tags in Helm are commit-sha based and CI-managed
 - scripts/bootstrap.sh is the preferred operational bootstrap entrypoint
+- scripts/cleanup.sh is the preferred teardown entrypoint before terraform destroy
 
 ## 14) Complete File Manifest (Operationally Relevant)
 
 The repository includes a large static UI asset set and legacy upstream artifacts.
 Operationally relevant areas are fully mapped in sections 4.1 to 4.6.
 
-For complete raw file inventory (all 410 files), run:
+For complete raw file inventory (all 408 tracked files), run:
 
 ```bash
-find . -path './.git' -prune -o -type f -print | sed 's#^./##' | sort
+git ls-files | sort
 ```
