@@ -453,18 +453,23 @@ remove_kubernetes_namespaces() {
 			log "Deleting namespace: $ns"
 			if [[ "$DRY_RUN" != "true" ]]; then
 				kubectl delete namespace "$ns" --ignore-not-found=true >/dev/null 2>&1 || true
-				
-				# Wait for namespace to be fully deleted
-				log "Waiting for namespace to be fully removed..."
+
+				# Wait for namespace deletion with periodic progress updates.
+				log "Waiting for namespace to be fully removed (up to 120s)..."
 				local count=0
 				while kubectl get namespace "$ns" >/dev/null 2>&1 && [[ $count -lt 60 ]]; do
 					sleep 2
-					((count++))
+					count=$((count + 1))
+					if (( count % 5 == 0 )); then
+						log "Namespace $ns still terminating... elapsed $((count * 2))s"
+					fi
 				done
-				
+
 				if kubectl get namespace "$ns" >/dev/null 2>&1; then
 					warn "Namespace $ns still exists after timeout, trying forced deletion"
 					kubectl patch namespace "$ns" -p '{"metadata":{"finalizers":[]}}' --type=merge >/dev/null 2>&1 || true
+				else
+					success "Namespace deleted: $ns"
 				fi
 			else
 				echo "  [DRY-RUN] would delete namespace: $ns"
@@ -507,7 +512,7 @@ parse_args() {
 				log "Dry-run mode enabled"
 				shift
 				;;
-			--force)
+			--force|-y)
 				FORCE_DELETE="true"
 				log "Force mode enabled (skipping confirmations)"
 				shift
@@ -525,7 +530,7 @@ Clean up all Kubernetes and AWS resources created by bootstrap.sh
 
 OPTIONS:
   --dry-run       Preview changes without executing them
-  --force         Skip interactive confirmations
+	--force, -y     Skip interactive confirmations
   --skip-oidc     Do not delete OIDC provider
   -h, --help      Show this help message
 
