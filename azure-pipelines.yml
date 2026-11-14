@@ -1,1 +1,227 @@
+# Front-end CI Pipeline (converted from GitHub Actions)
+#
+# Required setup in Azure DevOps:
+#   Service connections:
+#     mogambo-acr   Docker Registry service connection (type: Azure Container Registry)
+#                   pointing at mogambo.azurecr.io
+#   Optional pipeline variables:
+#     NVD_API_KEY   (secret) speeds up OWASP Dependency-Check database updates
+#   Permissions (for the Helm values commit):
+#     Project Build Service identity needs "Contribute" on the repo (Azure Repos).
+#     If the repo is on GitHub, replace the System.AccessToken usage with a PAT secret variable.
 
+name: Front-end CI - $(Build.Reason) - $(Date:yyyyMMdd)$(Rev:.r)
+
+# NOTE: manual runs ignore these path filters, so they always build
+#       (same as workflow_dispatch bypassing detect-changes before).
+trigger:
+  batch: false
+  branches:
+    include:
+      - dev
+  paths:
+    include:
+      - src/front-end/**
+
+# PR triggers work like this for GitHub / Bitbucket repos.
+# For Azure Repos, configure the same thing with a Build Validation branch policy on dev and main
+# (add the path filter src/front-end/* there).
+pr:
+  branches:
+    include:
+      - dev
+      - main
+  paths:
+    include:
+      - src/front-end/**
+
+parameters:
+  - name: forceBuild
+    displayName: Force rebuild Docker image without cache
+    type: boolean
+    default: false
+
+variables:
+  acrRegistry: mogambo.azurecr.io
+  acrServiceConnection: mogambo-acr
+  frontendDir: src/front-end
+  imageName: mogambo-frontend
+  helmValuesFile: deploy/helm/charts/front-end/values.yaml
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  # ---------------------------------------------------------------------------
+  - stage: BuildAndTest
+    displayName: Build and test
+    jobs:
+      - job: BuildTest
+        displayName: Build and test
+        timeoutInMinutes: 20
+        steps:
+          - checkout: self
+
+          - task: NodeTool@0
+            displayName: Setup Node 20
+            inputs:
+              versionSpec: '20.x'
+
+          - task: Cache@2
+            displayName: Cache npm
+            inputs:
+              key: 'npm | "$(Agent.OS)" | $(frontendDir)/package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: $(Pipeline.Workspace)/.npm
+
+          - script: npm ci --legacy-peer-deps --cache $(Pipeline.Workspace)/.npm
+            displayName: Install frontend dependencies
+            workingDirectory: $(frontendDir)
+
+          # OWASP Dependency-Check via its official Docker image (no extension needed).
+          # Set NVD_API_KEY as a secret variable for much faster NVD database updates.
+          - script: |
+              mkdir -p "$(Build.ArtifactStagingDirectory)/dependency-check"
+              docker run --rm \
+                -v "$(Build.SourcesDirectory)/$(frontendDir):/src:ro" \
+                -v "$(Build.ArtifactStagingDirectory)/dependency-check:/report" \
+                owasp/dependency-check:latest \
+                --project front-end \
+                --scan /src \
+                --format HTML \
+                --out /report \
+                --failOnCVSS 7 \
+                --disableYarnAudit \
+                ${NVD_API_KEY:+--nvdApiKey "$NVD_API_KEY"}
+            displayName: OWASP Dependency Check
+            continueOnError: true
+            env:
+              NVD_API_KEY: $(NVD_API_KEY)
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish dependency check report
+            condition: always()
+            inputs:
+              PathtoPublish: $(Build.ArtifactStagingDirectory)/dependency-check
+              ArtifactName: dependency-check-report
+
+          - script: npm test
+            displayName: Run tests
+            workingDirectory: $(frontendDir)
+
+          - script: npm run build
+            displayName: Build frontend
+            workingDirectory: $(frontendDir)
+
+  # ---------------------------------------------------------------------------
+  - stage: Docker
+    displayName: Docker build and push
+    dependsOn: BuildAndTest
+    # Not on PRs (matches original: only push or manual dispatch)
+    condition: and(succeeded('BuildAndTest'), ne(variables['Build.Reason'], 'PullRequest'))
+    jobs:
+      - job: BuildPush
+        displayName: Build, scan and push image
+        steps:
+          - checkout: self
+
+          - script: echo "##vso[task.setvariable variable=commit_sha;isOutput=true]${BUILD_SOURCEVERSION:0:7}"
+            name: getSha
+            displayName: Get commit SHA
+
+          - script: |
+              TAG="${BUILD_SOURCEVERSION:0:7}"
+              if [ "${FORCE_BUILD,,}" = "true" ]; then
+                echo "Running forced Docker rebuild without cache"
+                docker build --no-cache -t $(imageName):${TAG} $(frontendDir)
+              else
+                docker build -t $(imageName):${TAG} $(frontendDir)
+              fi
+            displayName: Build Docker image
+            env:
+              FORCE_BUILD: ${{ parameters.forceBuild }}
+
+          - script: |
+              TAG="${BUILD_SOURCEVERSION:0:7}"
+              docker tag $(imageName):${TAG} $(acrRegistry)/$(imageName):${TAG}
+            displayName: Tag Docker image for ACR
+
+          - script: |
+              TAG="${BUILD_SOURCEVERSION:0:7}"
+              docker run --rm \
+                -v /var/run/docker.sock:/var/run/docker.sock \
+                aquasec/trivy:latest image \
+                --format table \
+                --exit-code 1 \
+                --ignore-unfixed \
+                --vuln-type os,library \
+                --severity CRITICAL,HIGH \
+                $(imageName):${TAG}
+            displayName: Run Trivy vulnerability scanner
+            continueOnError: true
+
+          - task: Docker@2
+            displayName: Login to Azure Container Registry
+            inputs:
+              command: login
+              containerRegistry: $(acrServiceConnection)
+
+          - script: |
+              TAG="${BUILD_SOURCEVERSION:0:7}"
+              docker push $(acrRegistry)/$(imageName):${TAG}
+            displayName: Push Docker image to ACR
+
+  # ---------------------------------------------------------------------------
+  - stage: UpdateHelmValues
+    displayName: Update Helm values
+    dependsOn: Docker
+    condition: succeeded('Docker')
+    jobs:
+      - job: UpdateHelm
+        displayName: Update Helm image tag
+        variables:
+          imageTag: $[ stageDependencies.Docker.BuildPush.outputs['getSha.commit_sha'] ]
+        steps:
+          # persistCredentials keeps the build token in git config so we can push
+          - checkout: self
+            persistCredentials: true
+            fetchDepth: 0
+            clean: true
+
+          - script: |
+              git config user.name "Azure Pipelines Bot"
+              git config user.email "azure-pipelines@noreply.local"
+            displayName: Configure Git
+
+          - script: |
+              set -e
+              IMAGE_TAG="$(imageTag)"
+              if [ -z "$IMAGE_TAG" ]; then
+                echo "Docker image tag output is empty."
+                exit 1
+              fi
+
+              sed -i -E "s|^([[:space:]]*tag:).*|\1 ${IMAGE_TAG}|" $(helmValuesFile)
+              git add $(helmValuesFile)
+
+              if git diff --cached --quiet; then
+                echo "Helm values already up to date."
+                exit 0
+              fi
+
+              # [skip ci] prevents this commit from retriggering the pipeline
+              git commit -m "chore(ci): update front-end helm image tag to ${IMAGE_TAG} [skip ci]"
+
+              for attempt in 1 2 3; do
+                echo "Rebase/push attempt ${attempt}"
+                git fetch origin dev
+                git rebase origin/dev
+                if git push origin HEAD:dev; then
+                  exit 0
+                fi
+              done
+
+              echo "Failed to push Helm values update after retries."
+              exit 1
+            displayName: Update Helm values image tag
