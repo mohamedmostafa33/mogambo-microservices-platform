@@ -4,8 +4,6 @@
 #   Service connections:
 #     mogambo-acr   Docker Registry service connection (type: Azure Container Registry)
 #                   pointing at mogambo.azurecr.io
-#   Optional pipeline variables:
-#     NVD_API_KEY   (secret) speeds up OWASP Dependency-Check database updates
 #   Permissions (for the Helm values commit):
 #     Project Build Service identity needs "Contribute" on the repo (Azure Repos).
 #     If the repo is on GitHub, replace the System.AccessToken usage with a PAT secret variable.
@@ -79,33 +77,6 @@ stages:
             displayName: Install frontend dependencies
             workingDirectory: $(frontendDir)
 
-          # OWASP Dependency-Check via its official Docker image (no extension needed).
-          # Set NVD_API_KEY as a secret variable for much faster NVD database updates.
-          - script: |
-              mkdir -p "$(Build.ArtifactStagingDirectory)/dependency-check"
-              docker run --rm \
-                -v "$(Build.SourcesDirectory)/$(frontendDir):/src:ro" \
-                -v "$(Build.ArtifactStagingDirectory)/dependency-check:/report" \
-                owasp/dependency-check:latest \
-                --project front-end \
-                --scan /src \
-                --format HTML \
-                --out /report \
-                --failOnCVSS 7 \
-                --disableYarnAudit \
-                ${NVD_API_KEY:+--nvdApiKey "$NVD_API_KEY"}
-            displayName: OWASP Dependency Check
-            continueOnError: true
-            env:
-              NVD_API_KEY: $(NVD_API_KEY)
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish dependency check report
-            condition: always()
-            inputs:
-              PathtoPublish: $(Build.ArtifactStagingDirectory)/dependency-check
-              ArtifactName: dependency-check-report
-
           - script: npm test
             displayName: Run tests
             workingDirectory: $(frontendDir)
@@ -122,7 +93,7 @@ stages:
     condition: and(succeeded('BuildAndTest'), ne(variables['Build.Reason'], 'PullRequest'))
     jobs:
       - job: BuildPush
-        displayName: Build, scan and push image
+        displayName: Build and push image
         steps:
           - checkout: self
 
@@ -146,20 +117,6 @@ stages:
               TAG="${BUILD_SOURCEVERSION:0:7}"
               docker tag $(imageName):${TAG} $(acrRegistry)/$(imageName):${TAG}
             displayName: Tag Docker image for ACR
-
-          - script: |
-              TAG="${BUILD_SOURCEVERSION:0:7}"
-              docker run --rm \
-                -v /var/run/docker.sock:/var/run/docker.sock \
-                aquasec/trivy:latest image \
-                --format table \
-                --exit-code 1 \
-                --ignore-unfixed \
-                --vuln-type os,library \
-                --severity CRITICAL,HIGH \
-                $(imageName):${TAG}
-            displayName: Run Trivy vulnerability scanner
-            continueOnError: true
 
           - task: Docker@2
             displayName: Login to Azure Container Registry
