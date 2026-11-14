@@ -65,15 +65,7 @@ stages:
             inputs:
               versionSpec: '20.x'
 
-          - task: Cache@2
-            displayName: Cache npm
-            inputs:
-              key: 'npm | "$(Agent.OS)" | $(frontendDir)/package-lock.json'
-              restoreKeys: |
-                npm | "$(Agent.OS)"
-              path: $(Pipeline.Workspace)/.npm
-
-          - script: npm ci --legacy-peer-deps --cache $(Pipeline.Workspace)/.npm
+          - script: npm ci --legacy-peer-deps
             displayName: Install frontend dependencies
             workingDirectory: $(frontendDir)
 
